@@ -105,6 +105,12 @@ module ml505top
   : (count_r == 15'b0) ? 16'h0000
   : count_r + 1;
 
-  // Instantiate your CPU here
+  // MIPS 150 CPU
+  MIPS150 CPU(
+      .clk(cpu_clk_g),
+      .rst(rst),
+      .FPGA_SERIAL_RX(FPGA_SERIAL_RX),
+      .FPGA_SERIAL_TX(FPGA_SERIAL_TX)
+  );
   
 endmodule
