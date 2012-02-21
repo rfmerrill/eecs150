@@ -1,0 +1,7 @@
+#!/bin/bash
+
+coregen -b /dev/stdin <<EOM
+NEWPROJECT .
+SETPROJECT .
+EOM
+coregen -p . -b imem_blk_ram.xco

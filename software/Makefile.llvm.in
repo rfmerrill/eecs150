@@ -1,0 +1,28 @@
+CSRCS := $(wildcard *.c)
+COBJS := $(CSRCS:%.c=%.c.llvm.s.o)
+
+SSRCS := $(wildcard *.s)
+SOBJS := $(SSRCS:%.s=%.s.o)
+
+LDSRC := $(TARGET).ld
+
+default: $(TARGET)
+
+$(TARGET): $(COBJS) $(SOBJS)
+	mips-gcc -static -nostartfiles -nostdlib -nodefaultlibs -G0 -T $(LDSRC) $^ -o $@.elf
+	mips-objcopy -O binary $(TARGET).elf $(TARGET).bin
+	bin2mif < $(TARGET).bin > $(TARGET).mif
+	bin2coe < $(TARGET).bin > $(TARGET).coe
+	bin2rom $(TARGET) 0 < $(TARGET).bin > $(TARGET).v
+
+%.c.llvm: %.c
+	clang -static -emit-llvm -S -o $<.llvm $<
+
+%.c.llvm.s: %.c.llvm
+	llc -relocation-model=static -march=mips -o $<.s $<
+
+%.s.o: %.s
+	mips-as $< -o $<.o
+
+clean:
+	rm -f $(COBJS) $(SOBJS) $(TARGET).elf $(TARGET).{bin,mif,coe,v}

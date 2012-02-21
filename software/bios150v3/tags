@@ -1,0 +1,54 @@
+!_TAG_FILE_FORMAT	2	/extended format; --format=1 will not append ;" to lines/
+!_TAG_FILE_SORTED	1	/0=unsorted, 1=sorted, 2=foldcase/
+!_TAG_PROGRAM_AUTHOR	Darren Hiebert	/dhiebert@users.sourceforge.net/
+!_TAG_PROGRAM_NAME	Exuberant Ctags	//
+!_TAG_PROGRAM_URL	http://ctags.sourceforge.net	/official site/
+!_TAG_PROGRAM_VERSION	5.8	//
+ASCII_H_	ascii.h	2;"	d
+BUFFER_LEN	bios150v3.c	42;"	d	file:
+DECLARE_FILLV	memory.h	6;"	d
+DECLARE_FROM_ASCII_DEC	ascii.h	13;"	d
+DECLARE_FROM_ASCII_HEX	ascii.h	6;"	d
+DECLARE_TO_ASCII_HEX	ascii.h	20;"	d
+DEFINE_FILLV	memory.c	3;"	d	file:
+DEFINE_FROM_ASCII_DEC	ascii.c	3;"	d	file:
+DEFINE_FROM_ASCII_HEX	ascii.c	19;"	d	file:
+DEFINE_TO_ASCII_HEX	ascii.c	41;"	d	file:
+FALSE	types.h	15;"	d
+HI16	types.h	19;"	d
+HI4	types.h	29;"	d
+HI8	types.h	24;"	d
+HILO16	types.h	17;"	d
+HILO4	types.h	27;"	d
+HILO8	types.h	22;"	d
+LO16	types.h	20;"	d
+LO4	types.h	30;"	d
+LO8	types.h	25;"	d
+MEMORY_H_	memory.h	2;"	d
+NULL	types.h	12;"	d
+STRING_H_	string.h	2;"	d
+TARGET	Makefile	/^TARGET := bios150v3$/;"	m
+TRUE	types.h	14;"	d
+TYPES_H_	types.h	2;"	d
+UART_H_	uart.h	2;"	d
+URECV_CTRL	uart.h	6;"	d
+URECV_DATA	uart.h	7;"	d
+UTRAN_CTRL	uart.h	9;"	d
+UTRAN_DATA	uart.h	10;"	d
+_start	start.s	/^_start:$/;"	l
+entry_t	bios150v3.c	/^typedef void (*entry_t)(void);$/;"	t	file:
+int16_t	types.h	/^typedef short int16_t;$/;"	t
+int32_t	types.h	/^typedef int   int32_t;$/;"	t
+int8_t	types.h	/^typedef char  int8_t;$/;"	t
+main	bios150v3.c	/^int main(void)$/;"	f
+read_n	bios150v3.c	/^int8_t* read_n(int8_t*b, uint32_t n) $/;"	f
+read_token	bios150v3.c	/^int8_t* read_token(int8_t* b, uint32_t n, int8_t* ds)$/;"	f
+store	bios150v3.c	/^void store(uint32_t address, uint32_t length)$/;"	f
+strcmp	string.c	/^int32_t strcmp(const int8_t* s0, const int8_t* s1)$/;"	f
+strlen	string.c	/^uint32_t strlen(const int8_t* s)$/;"	f
+uint16_t	types.h	/^typedef unsigned short uint16_t;$/;"	t
+uint32_t	types.h	/^typedef unsigned int   uint32_t;$/;"	t
+uint8_t	types.h	/^typedef unsigned char  uint8_t;$/;"	t
+uread_int8	uart.c	/^int8_t uread_int8(void)$/;"	f
+uwrite_int8	uart.c	/^void uwrite_int8(int8_t c)$/;"	f
+uwrite_int8s	uart.c	/^void uwrite_int8s(const int8_t* s)$/;"	f
