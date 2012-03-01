@@ -1,5 +1,5 @@
-#define RECV_CTRL (*((volatile unsigned int*)0x80000000) & 0x02)
-#define RECV_DATA (*((volatile unsigned int*)0x80000004) & 0xFF)
+#define RECV_CTRL (*((volatile unsigned int*)0x80000004) & 0x01)
+#define RECV_DATA (*((volatile unsigned int*)0x8000000C) & 0xFF)
 
 #define TRAN_CTRL (*((volatile unsigned int*)0x80000000) & 0x01)
 #define TRAN_DATA (*((volatile unsigned int*)0x80000008))
