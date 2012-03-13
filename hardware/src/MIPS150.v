@@ -1,6 +1,6 @@
 
 module MIPS150(
-    input clk, rst,
+    input clk, rst, stall,
     input FPGA_SERIAL_RX,
     output FPGA_SERIAL_TX
 );

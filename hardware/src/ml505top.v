@@ -3,6 +3,7 @@ module ml505top
   input        FPGA_SERIAL_RX,
   output       FPGA_SERIAL_TX,
   input        GPIO_SW_C,
+  input        GPIO_SW_S,
   input        USER_CLK
 );
   wire rst;
@@ -20,7 +21,9 @@ module ml505top
   
   wire pll_lock;
   wire ctrl_lock;
-  
+ 
+  wire stall;
+
   PLL_BASE
   #(
     .BANDWIDTH("OPTIMIZED"),
@@ -89,7 +92,7 @@ module ml505top
     .REFCLK(cpu_clk_g), 
     .RST(~pll_lock)
   );
-  
+
   always @(posedge cpu_clk_g)
   begin
     reset_r <= next_reset_r;
@@ -105,10 +108,13 @@ module ml505top
   : (count_r == 15'b0) ? 16'h0000
   : count_r + 1;
 
+  assign stall = GPIO_SW_S;
+
   // MIPS 150 CPU
   MIPS150 CPU(
       .clk(cpu_clk_g),
       .rst(rst),
+      .stall(stall),
       .FPGA_SERIAL_RX(FPGA_SERIAL_RX),
       .FPGA_SERIAL_TX(FPGA_SERIAL_TX)
   );
