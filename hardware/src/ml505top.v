@@ -3,6 +3,7 @@ module ml505top
   input        FPGA_SERIAL_RX,
   output       FPGA_SERIAL_TX,
   input        GPIO_SW_C,
+  input		   GPIO_SW_S,
   input        USER_CLK
 );
   wire rst;
@@ -22,6 +23,7 @@ module ml505top
   wire ctrl_lock;
  
   reg stall;
+  reg stall_switch;
 
   PLL_BASE
   #(
@@ -107,12 +109,22 @@ module ml505top
   : (count_r == 15'b0) ? 16'h0000
   : count_r + 1;
 
-  // Temporary code for testing checkpoint 2:
+  // code for testing checkpoint 2: ***needs to be tested!***
   always@(posedge cpu_clk_g) 
-      if(rst)
+      if(rst) begin
           stall <= 1'b0;
-      else
-          stall <= ~stall;
+          stall_switch <= 1'b0;
+      end
+      else begin
+      	  if(GPIO_SW_S)
+      	  	stall_switch <= ~stall_switch;
+  	  	  else stall_switch <= stall_switch;
+  	  	  
+  	  	  if(stall_switch)
+          	stall <= ~stall;
+      	  else
+      	  	stall <= 1'b0;
+  	  end
 
   // MIPS 150 CPU
   MIPS150 CPU(
