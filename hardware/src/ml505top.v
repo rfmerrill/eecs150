@@ -1,10 +1,11 @@
 module ml505top
 (
-  input        FPGA_SERIAL_RX,
-  output       FPGA_SERIAL_TX,
-  input        GPIO_SW_C,
-  input		   GPIO_SW_S,
-  input        USER_CLK
+  input  FPGA_SERIAL_RX,
+  output FPGA_SERIAL_TX,
+  input  GPIO_SW_C,
+  input  GPIO_SW_S,
+  output GPIO_COMPLED_C,
+  input  USER_CLK
 );
   wire rst;
   
@@ -110,6 +111,8 @@ module ml505top
   : count_r + 1;
 
   // code for testing checkpoint 2: ***needs to be tested!***
+   assign GPIO_COMPLED_C = stall_switch;
+   
   always@(posedge cpu_clk_g) 
       if(rst) begin
           stall <= 1'b0;
