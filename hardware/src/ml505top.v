@@ -1,11 +1,11 @@
 module ml505top
 (
-  input  FPGA_SERIAL_RX,
-  output FPGA_SERIAL_TX,
-  input  GPIO_SW_C,
+  input        FPGA_SERIAL_RX,
+  output       FPGA_SERIAL_TX,
+  input        GPIO_SW_C,
   input  GPIO_SW_S,
-  output GPIO_COMPLED_C,
-  input  USER_CLK
+  output GPIO_COMPLED_S,
+  input        USER_CLK
 );
   wire rst;
   
@@ -24,8 +24,15 @@ module ml505top
   wire ctrl_lock;
  
   reg stall;
-  reg stall_switch;
-
+  reg stalling;
+  wire stall_pressed;
+  
+  Debouncer stall_parse(.clk(cpu_clk_g),
+   						.in(GPIO_SW_S),
+   						.out(stall_pressed)
+   						);
+   							
+   							
   PLL_BASE
   #(
     .BANDWIDTH("OPTIMIZED"),
@@ -110,24 +117,41 @@ module ml505top
   : (count_r == 15'b0) ? 16'h0000
   : count_r + 1;
 
-  // code for testing checkpoint 2: ***needs to be tested!***
-   assign GPIO_COMPLED_C = stall_switch;
+  // Temporary code for testing checkpoint 2:
+  reg prev_stall_pressed;
+  reg posedge_stall_pressed;
+  always@(posedge cpu_clk_g) begin
+  	if(rst) begin
+  		prev_stall_pressed <= 1'b0;
+  		posedge_stall_pressed <= 1'b0;
+	end
+  	else begin
+  		prev_stall_pressed <= stall_pressed;
+  		if(~prev_stall_pressed & stall_pressed)
+  			posedge_stall_pressed <= 1'b1;
+		else
+			posedge_stall_pressed <= 1'b0;
+  	end
+  end
+  
+  assign GPIO_COMPLED_S = stalling;
    
-  always@(posedge cpu_clk_g) 
+  always@(posedge cpu_clk_g) begin
       if(rst) begin
           stall <= 1'b0;
-          stall_switch <= 1'b0;
+          stalling <= 1'b0;
       end
       else begin
-      	  if(GPIO_SW_S)
-      	  	stall_switch <= ~stall_switch;
-  	  	  else stall_switch <= stall_switch;
+      	  if(posedge_stall_pressed)
+      	  	stalling <= ~stalling;
+  	  	  else stalling <= stalling;
   	  	  
-  	  	  if(stall_switch)
+  	  	  if(stalling)
           	stall <= ~stall;
       	  else
       	  	stall <= 1'b0;
   	  end
+ end
 
   // MIPS 150 CPU
   MIPS150 CPU(
