@@ -9,7 +9,7 @@ INC := $(shell find $(SRCDIR) -type d -exec echo -n '+incdir+../'{} \;)
 STATUS := build/.status
 XILINX_LIBS := unisims_ver unimacro_ver xilinxcorelib_ver secureip
 XILINX_LIB_INC := $(foreach lib,$(XILINX_LIBS),$(addprefix -L ,$(lib)))
-XILINX_LIBS_MAP := $(wildcard /opt/Xilinx/14.1/ISE_DS/ISE/verilog/mti_se/10.1b_2/lin64/*)q
+XILINX_LIBS_MAP := $(wildcard /opt/Xilinx/14.1/ISE_DS/ISE/verilog/mti_se/10.1b_2/lin64/*)
 all: $(TRANSCRIPT)
 
 compile: $(STATUS)
