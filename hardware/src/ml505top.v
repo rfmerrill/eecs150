@@ -22,6 +22,8 @@ module ml505top
   
   wire pll_lock;
   wire ctrl_lock;
+  
+  reg stall;
    							
   PLL_BASE
   #(
