@@ -117,10 +117,10 @@ module ml505top
           stall <= 1'b0;
       end
       else begin
-  	  	  if(GPIO_DIP_0)
-          	stall <= ~stall;
+  	  if(GPIO_DIP_0)
+            stall <= ~stall;
       	  else
-      	  	stall <= 1'b0;
+      	    stall <= 1'b0;
   	  end
  end
 
