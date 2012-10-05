@@ -18,8 +18,18 @@ module RegFile(input clk,
                input we,
                input  [4:0] ra1, ra2, wa,
                input  [31:0] wd,
-               output [31:0] rd1, rd2);
+               output reg [31:0] rd1, rd2);
 
-// Implement your register file here, then delete this comment.
+  reg [31:0] contents[0:31];
+
+  always @(*) begin
+    rd1 = (ra1 == 5'b0) ? 32'b0 : contents[ra1];
+    rd2 = (ra2 == 5'b0) ? 32'b0 : contents[ra2];
+  end
+  
+  always @(posedge clk) begin
+    if (we && (wa != 5'b0))
+      contents[wa] <= wd;
+  end
 
 endmodule

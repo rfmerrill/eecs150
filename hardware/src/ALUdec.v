@@ -15,10 +15,9 @@ module ALUdec(
 );
 
     always @(*) begin
-        ALUop = `ALU_XXX;
-        if (opcode[5])
-            ALUop = `ALU_ADDU;
-        else if (opcode == `RTYPE) begin
+        ALUop = `ALU_XXX;  // fall back on "do nothing" --> branching type instructions mostly.
+
+        if (opcode == `RTYPE) begin
             case (funct)
                 `SLL: ALUop = `ALU_SLL;
                 `SRL: ALUop = `ALU_SRL;
@@ -35,7 +34,10 @@ module ALUdec(
                 `SLT: ALUop = `ALU_SLT;
                 `SLTU: ALUop = `ALU_SLTU;
             endcase
+        end else if (opcode[5] == 1) begin // load/store instructions have the high bit set. Do add for all of them.
+             ALUop = `ALU_ADDU;
         end else case (opcode)
+
             `ADDIU: ALUop = `ALU_ADDU;
             `SLTIU: ALUop = `ALU_SLTU;
             `SLTI: ALUop = `ALU_SLT;
