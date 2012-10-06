@@ -10,8 +10,8 @@ module InputSelector(input [31:0] Instruction,
                     input ALUSrc,
                     output [31:0] RegA,
                     output [31:0] RegB,
-                    output [31:0] ALUinA,
-                    output [31:0] ALUinB                 
+                    output [31:0] ALUInA,
+                    output [31:0] ALUInB                 
                     );
 
   wire [31:0] shamt;
@@ -29,6 +29,6 @@ module InputSelector(input [31:0] Instruction,
   assign RegA = (ForwardRA == RA1) ? ForwardRD : Drs;
   assign RegB = (ForwardRA == RA2) ? ForwardRD : Drt;
   
-  assign ALUinA = ShiftImmediate ? shamt : RegA;
-  assign ALUinB = ALUSrc ? immed : RegB;
+  assign ALUInA = ShiftImmediate ? shamt : RegA;
+  assign ALUInB = ALUSrc ? immed : RegB;
 endmodule

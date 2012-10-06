@@ -21,7 +21,6 @@ module InstructionDecoder  (input [31:0] Instruction,
 
   wire [5:0] Opcode;
   wire [5:0] Funct;
-  wire Rtype;
 
   
   assign Opcode = Instruction[31:26];

@@ -52,16 +52,13 @@ module MIPS150(
   wire [31:0] RD2E;
   
   wire [31:0] RegAE;
-  wire [31:0] RegBE;
   wire [31:0] ALUInAE;
   wire [31:0] ALUInBE;
   
-  wire BranchTakenE;
-  wire [31:0] BranchAddrE;
   wire [31:0] ActualALUOutE;
   
   wire [3:0] InstWriteMaskE; 
-  wire [3:0] DataMemMaskE;
+  wire [3:0] DataWriteMaskE;
   wire [11:0] MemAddrE;
   wire [31:0] ShiftedDataE;
   
@@ -69,7 +66,7 @@ module MIPS150(
 
 // Originates in this stage, goes to next.
   wire [31:0] ALUOutE;
-  wire [31:0] WriteDataE;
+  wire [31:0] RegBE;
   wire [4:0]  WriteRegE;
 
 // M stage  
@@ -83,15 +80,18 @@ module MIPS150(
   reg [31:0] ALUOutM;
   reg [31:0] WriteDataM;
   reg [4:0]  WriteRegM;
+
+  wire [31:0] DMemOutM;
   
   wire [31:0] ResultM;
-  
+  wire [31:0] FakeResultM;
+
   
  
   imem_blk_ram instmem(
     .clka(clk),
     .ena(~stall),
-    .wea(InstWritemaskE),
+    .wea(InstWriteMaskE),
     .addra(MemAddrE),
     .dina(ShiftedDataE),
     .clkb(clk),
@@ -135,7 +135,7 @@ module MIPS150(
     .Instruction(InstructionE),
     .Drs(RD1E),
     .Drt(RD2E),
-    .ZeroExtend(ZeroExtendE),
+    .ZeroExtend(ZeroExtE),
     .ForwardRD(ALUOutM),
     .ForwardRA(WriteRegM),
     .ShiftImmediate(ShiftImmediateE),
@@ -147,8 +147,8 @@ module MIPS150(
   );
 
   ALU myalu( 
-    .A(ALUinAE),
-    .B(ALUinBE),
+    .A(ALUInAE),
+    .B(ALUInBE),
     .ALUop(ALUControlE),
     .Out(ActualALUOutE)
   );
@@ -173,7 +173,7 @@ module MIPS150(
 
   MemoryMap mmap(
     .Address(ALUOutE),
-    .WriteData(WriteDataE),
+    .WriteData(RegBE),
     .WriteEnable(MemWriteE & ~stall),
     .MemSize(MemSizeE),
     .MemAddr(MemAddrE),
@@ -194,16 +194,54 @@ module MIPS150(
   );  
   
   
-  
   MemoryUnMap munmap(
     .MemToReg(MemToRegM),
     .MemOut(DMemOutM),
     .MemSize(MemSizeM),
     .LoadUnsigned(LoadUnsignedM),
     .ALUOut(ALUOutM),
-    .Result(ResultM)
+    .Result(FakeResultM)
   );
   
+  wire DataInValid;
+  wire DataOutValid;
+  wire DataInReady;
+  wire DataOutReady;
+  
+  wire [7:0] DataIn;
+  wire [7:0] DataOut;
+
+  UART serport(
+    .Clock(clk),
+    .Reset(rst),
+    .DataInValid(DataInValid),
+    .DataOutValid(DataOutValid),
+    .DataInReady(DataInReady),
+    .DataOutReady(DataOutReady),
+    .DataIn(DataIn),
+    .DataOut(DataOut),
+    .SIn(FPGA_SERIAL_RX),
+    .SOut(FPGA_SERIAL_TX)
+  );
+  
+  UARTInterface ui(
+    .clk(clk),
+    .rst(rst),
+    .DataIn(DataIn),
+    .DataInValid(DataInValid),
+    .DataInReady(DataInReady),
+    .DataOut(DataOut),
+    .DataOutValid(DataOutValid),
+    .DataOutReady(DataOutReady),
+    .FakeResult(FakeResultM),
+    .Result(ResultM),
+    .LoadUnsigned(LoadUnsignedM),
+    .ALUOut(ALUOutM),
+    .WriteEnable(MemWriteM & ~stall),
+    .WriteData(WriteDataM),
+    .MemToReg(MemToRegM)
+  );
+
 
 
   always @(posedge clk) begin
@@ -230,13 +268,14 @@ module MIPS150(
       BranchTypeE <= BranchTypeD;
       ZeroExtE <= ZeroExtD;
       
+      
       MemWriteM <= MemWriteE;
       MemToRegM <= MemToRegE;
       RegWriteM <= RegWriteE;
       LoadUnsignedM <= LoadUnsignedE;
       MemSizeM <= MemSizeE;
       ALUOutM <= ALUOutE;
-      WriteDataM <= WriteDataE;
+      WriteDataM <= RegBE;
       WriteRegM <= WriteRegE;
   
       

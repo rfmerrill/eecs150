@@ -34,7 +34,7 @@ module OutputSelector(input Branch,
           WriteReg = Instruction[15:11];
         end 
         `B_BEQ: BranchTaken = (RegA == RegB);
-        `B_BNE: BranchTaken = (RegA !== RegB);
+        `B_BNE: BranchTaken = (RegA != RegB);
         `B_BLEZ: BranchTaken = (RegA <= 32'b0);
         `B_BGTZ: BranchTaken = (RegA >  32'b0);
         `B_BLTZ: BranchTaken = (RegA <  32'b0);

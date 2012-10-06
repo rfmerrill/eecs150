@@ -17,7 +17,7 @@ module MemoryMap (input [31:0] Address,
   
   reg [3:0] WriteMask;
   
-  
+  assign MemAddr = Address[13:2];
  
   always @(*) begin
     if (MemSize == 2'b00) begin
@@ -32,7 +32,7 @@ module MemoryMap (input [31:0] Address,
     end
   end
 
-  assign InstWriteMask = (~Address[31] & Address[29]) ? WriteMask : 4'b0000;
-  assign DataWriteMask = (~Address[31] & Address[29]) ? WriteMask : 4'b0000;
+  assign InstWriteMask = (~Address[31] & Address[29] & WriteEnable) ? WriteMask : 4'b0000;
+  assign DataWriteMask = (~Address[31] & Address[29] & WriteEnable) ? WriteMask : 4'b0000;
 
 endmodule
