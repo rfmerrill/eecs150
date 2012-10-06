@@ -1,7 +1,7 @@
 ##############################################################
 #
-# Xilinx Core Generator version 12.4
-# Date: Sun Sep  4 21:03:21 2011
+# Xilinx Core Generator version 14.1
+# Date: Fri Oct  5 23:10:29 2012
 #
 ##############################################################
 #
@@ -9,6 +9,10 @@
 #  Xilinx CORE Generator IP GUI. It is strongly recommended
 #  that you do not manually alter this file as it may cause
 #  unexpected and unsupported behavior.
+#
+##############################################################
+#
+#  Generated from component: xilinx.com:ip:blk_mem_gen:4.3
 #
 ##############################################################
 #
@@ -89,5 +93,8 @@ CSET write_depth_a=4096
 CSET write_width_a=32
 CSET write_width_b=32
 # END Parameters
+# BEGIN Extra information
+MISC pkg_timestamp=2012-04-24T06:33:33Z
+# END Extra information
 GENERATE
-# CRC: f905215c
+# CRC: f4797ac6

@@ -3,7 +3,7 @@
 use strict;
 
 if ($#ARGV < 1) {
-  print "Usage: instantiate.pl <modulename> <instancename>\n";
+  print "Usage: instantiate.pl <modulename> <instancename> [indentdepth]\n";
   exit(2);
 }
 
@@ -83,14 +83,22 @@ while (($foo = shift (@words)) ne ")") {
 
 print "Wires: " . join(" ", @wires) . "\n";
 
+
+print ' ' x $indentdepth;
 print $modulename . " " . $instancename . "(\n";
 
 my $wire = shift(@wires);
-print "  ." . $wire . "( )";
+print ' ' x $indentdepth;
+print "  ." . $wire . "()";
 
 while ($wire = shift(@wires)) {
-  print ",\n  ." . $wire . "( )";
+  print ",\n";
+  print ' ' x $indentdepth;
+  print "  .". $wire . "()";
 }
-print "\n);\n";
+
+print "\n";
+print ' ' x $indentdepth;
+print ");\n";
 
  

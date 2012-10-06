@@ -1,10 +1,6 @@
-module MemoryStageControl(input clk, input rst);
-  always @(*) begin
-
-  end
-
-  always @(posedge clk) begin
-
-  end
+module MemoryStageControl(input [31:0] ALUOut,
+                          input [31:0] WriteData,
+                          input [4:0] WriteReg,
+                          input );
 
 endmodule

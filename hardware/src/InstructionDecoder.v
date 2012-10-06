@@ -16,7 +16,6 @@ module InstructionDecoder  (input [31:0] Instruction,
                             output reg LoadUnsigned,
                             output reg [1:0] MemSize, // 00 = byte, 01 = half, 11 = word
                             output reg [2:0] BranchType, // See Opcode.vh for details about branch types.
-                            output reg PCToReg,
                             output reg ZeroExt,
                             output reg Invalid);
 
@@ -60,7 +59,7 @@ module InstructionDecoder  (input [31:0] Instruction,
       end else if (Funct == `JALR) begin
         Branch = 1;
         BranchType = `B_JR;
-        PCToReg = 1;
+        RegWrite = 1;
       end else if ((Funct == `SLL) || (Funct == `SRL) || (Funct == `SRA)) begin
         Shamt = 1;
       end else if (ALUControl == `ALU_XXX) begin
@@ -100,7 +99,7 @@ module InstructionDecoder  (input [31:0] Instruction,
           `J: BranchType = `B_J;
           `JAL: begin
             BranchType = `B_J;
-            PCToReg = 1;
+            RegWrite = 1;
            end
           `BEQ: BranchType = `B_BEQ;
           `BNE: BranchType = `B_BNE;
