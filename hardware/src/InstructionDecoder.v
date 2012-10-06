@@ -44,7 +44,6 @@ module InstructionDecoder  (input [31:0] Instruction,
     LoadUnsigned = 0;
     MemSize = 2'b00;
     BranchType = `B_J;
-    PCToReg = 0;
     Invalid = 0;
     ZeroExt = 0;
     

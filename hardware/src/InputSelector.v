@@ -11,7 +11,7 @@ module InputSelector(input [31:0] Instruction,
                     output [31:0] RegA,
                     output [31:0] RegB,
                     output [31:0] ALUinA,
-                    output [31:0] ALUinB,                    
+                    output [31:0] ALUinB                 
                     );
 
   wire [31:0] shamt;

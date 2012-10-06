@@ -72,8 +72,6 @@ module MIPS150(
   wire [31:0] WriteDataE;
   wire [4:0]  WriteRegE;
 
-
-
 // M stage  
   
   reg MemWriteM;
@@ -158,6 +156,7 @@ module MIPS150(
   OutputSelector osel(
     .Branch(BranchE),
     .RegDst(RegDstE),
+    .ActualALUOut(ActualALUOutE),
     .BranchType(BranchTypeE),
     .Instruction(InstructionE),
     .oldPC(PCE),
@@ -165,10 +164,8 @@ module MIPS150(
     .RegA(RegAE),
     .RegB(RegBE),
     .NextPC(NextPC),
-    .ActualALUOut(ActualALUOutE),
-    .ALUOut(ALUOutE),
-
-    .WriteReg(WriteRegE)
+    .WriteReg(WriteRegE),
+    .ALUOut(ALUOutE)
   );
 
 
@@ -177,7 +174,7 @@ module MIPS150(
   MemoryMap mmap(
     .Address(ALUOutE),
     .WriteData(WriteDataE),
-    .WriteEnable(MemWriteE),
+    .WriteEnable(MemWriteE & ~stall),
     .MemSize(MemSizeE),
     .MemAddr(MemAddrE),
     .InstWriteMask(InstWriteMaskE),
@@ -197,10 +194,21 @@ module MIPS150(
   );  
   
   
+  
+  MemoryUnMap munmap(
+    .MemToReg(MemToRegM),
+    .MemOut(DMemOutM),
+    .MemSize(MemSizeM),
+    .LoadUnsigned(LoadUnsignedM),
+    .ALUOut(ALUOutM),
+    .Result(ResultM)
+  );
+  
 
 
   always @(posedge clk) begin
-  
+
+ 
     if (~stall) begin
     
       // Every clock cycle, the pipeline marches along happily~
@@ -227,12 +235,15 @@ module MIPS150(
       RegWriteM <= RegWriteE;
       LoadUnsignedM <= LoadUnsignedE;
       MemSizeM <= MemSizeE;
-      ALUOutM <= ALUOutE
+      ALUOutM <= ALUOutE;
       WriteDataM <= WriteDataE;
       WriteRegM <= WriteRegE;
   
       
-    end  
+    end
+    
+    if (rst)
+      PC <= 32'b0;  
   end
 
 

@@ -9,16 +9,16 @@ module OutputSelector(input Branch,
                     input [31:0] newPC,
                     input [31:0] RegA,
                     input [31:0] RegB,
-                    output Reg [31:0] NextPC,
-                    output Reg [4:0] WriteReg,
-                    output Reg [31:0] ALUOut);
+                    output reg [31:0] NextPC,
+                    output reg [4:0] WriteReg,
+                    output reg [31:0] ALUOut);
 
   reg BranchTaken;
                     
   always @(*) begin
     NextPC = newPC + 32'd4;
     WriteReg = RegDst ? Instruction[15:11] : Instruction[20:16];
-    ALUOut = ActualALUOut
+    ALUOut = ActualALUOut;
 
     if (Branch) begin
       WriteReg = 5'd31;  

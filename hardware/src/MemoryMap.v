@@ -11,7 +11,7 @@ module MemoryMap (input [31:0] Address,
                   output [11:0] MemAddr,
                   output [3:0] InstWriteMask,
                   output [3:0] DataWriteMask,
-                  output reg [31:0] ShiftedData,
+                  output reg [31:0] ShiftedData
                   );
 
   
