@@ -6,6 +6,8 @@ SOBJS := $(SSRCS:%.s=%.s.o)
 
 LDSRC := $(TARGET).ld
 
+.SECONDARY:
+
 default: $(TARGET)
 
 $(TARGET): $(COBJS) $(SOBJS)
