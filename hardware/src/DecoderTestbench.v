@@ -42,7 +42,6 @@ module DecoderTestbench();
     .LoadUnsigned(LoadUnsigned ),
     .MemSize(MemSize ),
     .BranchType(BranchType ),
-    .PCToReg(PCToReg ),
     .ZeroExt(ZeroExt),
     .Invalid(Invalid )
    );
