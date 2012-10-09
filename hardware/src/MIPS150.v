@@ -87,6 +87,34 @@ module MIPS150(
   wire [31:0] FakeResultM;
 
   
+  wire DataInValid;
+  wire DataOutValid;
+  wire DataInReady;
+  wire DataOutReady;
+  
+  wire [7:0] DataIn;
+  wire [7:0] DataOut;
+
+
+  wire [35:0] csctrl;
+  
+/*
+  chipscope_icon ICON(
+   .CONTROL0(csctrl)
+  );
+
+  chipscope_ila ILA(
+    .CONTROL(csctrl),
+    .CLK(clk),
+    .DATA({NextPC, InstructionE, FPGA_SERIAL_TX, FPGA_SERIAL_RX, clk, stall, rst, 19'b0,
+           MemWriteM, MemToRegM, RegWriteM, WriteRegM, ResultM,
+           ALUOutM, RegAE, RegBE,
+           DataInValid, DataInReady, DataOutValid, DataOutReady, 12'b0,
+           DataIn, DataOut} ),
+    .TRIG0(DataOutValid)
+  );
+*/
+
  
   imem_blk_ram instmem(
     .clka(clk),
@@ -136,8 +164,8 @@ module MIPS150(
     .Drs(RD1E),
     .Drt(RD2E),
     .ZeroExtend(ZeroExtE),
-    .ForwardRD(ALUOutM),
-    .ForwardRA(WriteRegM),
+    .ForwardRD(RegWriteM ? ALUOutM : 32'b0 ),
+    .ForwardRA(RegWriteM ? WriteRegM : 5'b0 ),
     .ShiftImmediate(ShiftImmediateE),
     .ALUSrc(ALUSrcE),
     .RegA(RegAE),
@@ -186,7 +214,7 @@ module MIPS150(
 
   dmem_blk_ram datamem(
     .clka(clk),
-    .ena(~stall),
+    .ena(1'b1),
     .wea(DataWriteMaskE),
     .addra(MemAddrE),
     .dina(ShiftedDataE),
@@ -202,14 +230,7 @@ module MIPS150(
     .ALUOut(ALUOutM),
     .Result(FakeResultM)
   );
-  
-  wire DataInValid;
-  wire DataOutValid;
-  wire DataInReady;
-  wire DataOutReady;
-  
-  wire [7:0] DataIn;
-  wire [7:0] DataOut;
+
 
   UART serport(
     .Clock(clk),
@@ -236,6 +257,7 @@ module MIPS150(
     .FakeResult(FakeResultM),
     .Result(ResultM),
     .LoadUnsigned(LoadUnsignedM),
+    .MemSize(MemSizeM),
     .ALUOut(ALUOutM),
     .WriteEnable(MemWriteM & ~stall),
     .WriteData(WriteDataM),
@@ -247,7 +269,34 @@ module MIPS150(
   always @(posedge clk) begin
 
  
-    if (~stall) begin
+    if (rst) begin
+      PC <= 32'b0;
+      PCE <= 32'b0;    
+      
+      InstructionE <= 32'b0;
+      ALUControlE <= 4'b0;
+      BranchE <= 0;
+      RegDstE <= 0;
+      ALUSrcE <= 0;
+      ShiftImmediateE <= 0;
+      MemWriteE <= 0;
+      MemToRegE <= 0;
+      RegWriteE <= 0;
+      LoadUnsignedE <= 0;
+      MemSizeE <= 2'b0;
+      BranchTypeE <= 3'b0;
+      ZeroExtE <= 0;
+      
+      
+      MemWriteM <= 0;
+      MemToRegM <= 0;
+      RegWriteM <= 0;
+      LoadUnsignedM <= 0;
+      MemSizeM <= 2'b0;
+      ALUOutM <= 32'b0;
+      WriteDataM <= 32'b0;
+      WriteRegM <= 0;
+    end else if (~stall) begin
     
       // Every clock cycle, the pipeline marches along happily~
     
@@ -281,8 +330,6 @@ module MIPS150(
       
     end
     
-    if (rst)
-      PC <= 32'b0;  
   end
 
 
