@@ -19,10 +19,10 @@ module OutputSelector(input Branch,
     NextPC = newPC + 32'd4;
     WriteReg = RegDst ? Instruction[15:11] : Instruction[20:16];
     ALUOut = ActualALUOut;
+    BranchTaken = 0;
 
     if (Branch) begin
       WriteReg = 5'd31;  
-      BranchTaken = 0;
       ALUOut = oldPC + 32'd8;
 
       case (BranchType)
