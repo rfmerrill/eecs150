@@ -85,8 +85,7 @@ module MIPS150(
   
   wire [31:0] ResultM;
   wire [31:0] FakeResultM;
-
-  
+   
   wire DataInValid;
   wire DataOutValid;
   wire DataInReady;
@@ -97,8 +96,8 @@ module MIPS150(
 
 
   wire [35:0] csctrl;
-  
-/*
+
+/*  
   chipscope_icon ICON(
    .CONTROL0(csctrl)
   );
@@ -108,13 +107,12 @@ module MIPS150(
     .CLK(clk),
     .DATA({NextPC, InstructionE, FPGA_SERIAL_TX, FPGA_SERIAL_RX, clk, stall, rst, 19'b0,
            MemWriteM, MemToRegM, RegWriteM, WriteRegM, ResultM,
-           ALUOutM, RegAE, RegBE,
+           ALUOutM, wtf, 32'b0,
            DataInValid, DataInReady, DataOutValid, DataOutReady, 12'b0,
            DataIn, DataOut} ),
     .TRIG0(DataOutValid)
   );
 */
-
  
   imem_blk_ram instmem(
     .clka(clk),
@@ -164,8 +162,8 @@ module MIPS150(
     .Drs(RD1E),
     .Drt(RD2E),
     .ZeroExtend(ZeroExtE),
-    .ForwardRD(RegWriteM ? ALUOutM : 32'b0 ),
-    .ForwardRA(RegWriteM ? WriteRegM : 5'b0 ),
+    .ForwardRD((RegWriteM & ~MemToRegM) ? ResultM : 32'b0 ),
+    .ForwardRA((RegWriteM & ~MemToRegM) ? WriteRegM : 5'b0 ),
     .ShiftImmediate(ShiftImmediateE),
     .ALUSrc(ALUSrcE),
     .RegA(RegAE),
