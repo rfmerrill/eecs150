@@ -22,6 +22,14 @@ module EchoTestbench();
     // Instantiate your CPU here and connect the FPGA_SERIAL_TX wires
     // to the UART we use for testing
 
+    MIPS150 CPU (
+      .clk(Clock),
+      .rst(Reset),
+      .stall(1'b0),
+      .FPGA_SERIAL_TX(FPGA_SERIAL_TX),
+      .FPGA_SERIAL_RX(FPGA_SERIAL_RX)
+    );
+
 
 
     UART          #( .ClockFreq(       ClockFreq))
@@ -58,8 +66,36 @@ module EchoTestbench();
       while (!DataOutValid) #(Cycle);
       $display("Got %d", DataOut);
 
-      // Add more test cases!
+      DataOutReady = 1'b1;
+      #(Cycle)
+      DataOutReady = 1'b0;
+      
+      DataIn = 8'h89;
+      while (!DataInReady) #(Cycle);
+      DataInValid = 1'b1;
+      #(Cycle)
+      DataInValid = 1'b0;
+      
+      // Wait for something to come back
+      while (!DataOutValid) #(Cycle);
+      $display("Got %d", DataOut);
 
+      DataOutReady = 1'b1;
+      #(Cycle)
+      DataOutReady = 1'b0;
+
+      DataIn = 8'h08;
+      while (!DataInReady) #(Cycle);
+      DataInValid = 1'b1;
+      #(Cycle)
+      DataInValid = 1'b0;
+      
+      // Wait for something to come back
+      while (!DataOutValid) #(Cycle);
+      $display("Got %d", DataOut);
+
+      // Add more test cases!
+     
 
 
       $finish();
