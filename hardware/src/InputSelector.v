@@ -22,9 +22,9 @@ module InputSelector(input [31:0] Instruction,
   assign RA1 = Instruction[25:21];
   assign RA2 = Instruction[20:16];
 
-  assign shamt = Instruction[10:6];
+  assign shamt = { 27'b0, Instruction[10:6] };
 
-  assign immed = (ZeroExtend | ~Instruction[15]) ? { 16'b0, Instruction[15:0] } : { 16'b1, Instruction[15:0] };
+  assign immed = (ZeroExtend | ~Instruction[15]) ? { 16'b0, Instruction[15:0] } : { 16'hFFFF, Instruction[15:0] };
 
   assign RegA = (ForwardRA == RA1) ? ForwardRD : Drs;
   assign RegB = (ForwardRA == RA2) ? ForwardRD : Drt;
