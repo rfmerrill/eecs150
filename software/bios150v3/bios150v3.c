@@ -45,7 +45,7 @@ typedef void (*entry_t)(void);
 
 int main(void)
 {
-    uwrite_int8s("\r\n\r\n\r\n\r\n");
+    uwrite_int8s("\r\nabcd\r\n");
 
     for ( ; ; ) {
         uwrite_int8s("> ");
