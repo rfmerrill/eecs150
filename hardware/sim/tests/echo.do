@@ -5,4 +5,5 @@ add wave EchoTestbench/*
 add wave EchoTestbench/CPU/*
 add wave EchoTestbench/CPU/Registers/*
 add wave EchoTestbench/CPU/Registers/contents/*
+add wave EchoTestbench/CPU/osel/*
 run 80000us
