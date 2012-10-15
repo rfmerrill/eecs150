@@ -21,11 +21,11 @@ module MemoryMap (input [31:0] Address,
  
   always @(*) begin
     if (MemSize == 2'b00) begin
-      WriteMask = 4'b0001 << Address[1:0];
-      ShiftedData = WriteData << 8 * Address[1:0];
+      WriteMask = 4'b1000 >> Address[1:0];
+      ShiftedData = { WriteData[7:0], 24'b0 } >> 8 * Address[1:0];
     end else if (MemSize == 2'b01) begin
-      WriteMask = Address[1] ? 4'b1100 : 4'b0011;
-      ShiftedData = Address[1] ? { WriteData[15:0], 16'b0 } : WriteData;
+      WriteMask = ~Address[1] ? 4'b1100 : 4'b0011;
+      ShiftedData = ~Address[1] ? { WriteData[15:0], 16'b0 } : WriteData;
     end else begin
       WriteMask = 4'b1111;
       ShiftedData = WriteData;

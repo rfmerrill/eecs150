@@ -116,7 +116,7 @@ module MIPS150(
  
   imem_blk_ram instmem(
     .clka(clk),
-    .ena(~stall),
+    .ena(1'b1),
     .wea(InstWriteMaskE),
     .addra(MemAddrE),
     .dina(ShiftedDataE),
@@ -256,7 +256,7 @@ module MIPS150(
     .Result(ResultM),
     .LoadUnsigned(LoadUnsignedM),
     .MemSize(MemSizeM),
-    .ALUOut(ALUOutM),
+    .ALUOut(stall ? 32'b0 : ALUOutM),
     .WriteEnable(MemWriteM & ~stall),
     .WriteData(WriteDataM),
     .MemToReg(MemToRegM)
