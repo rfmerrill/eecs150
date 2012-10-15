@@ -31,7 +31,12 @@ module ALU(
             `ALU_LUI:  Out = { B[15:0], 16'b0 };
             `ALU_SLL:  Out = B << A;
             `ALU_SRL:  Out = B >> A;
-            `ALU_SRA:  Out = $signed(B) >>> A;
+            `ALU_SRA:  begin
+              if (B[31])
+                Out = ~( (~B) >> A ); 
+              else
+                Out = B >> A;
+            end
             `ALU_NOR:  Out = ~(A | B);
             `ALU_SLT:  Out = { 31'b0, $signed(A) < $signed(B) };
             `ALU_SLTU: Out = { 31'b0, A < B };
