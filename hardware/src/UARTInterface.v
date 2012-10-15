@@ -1,6 +1,7 @@
 module UARTInterface(
   input clk,
   input rst,
+  input stall,
   output  reg [7:0] DataIn,
   output    reg  DataInValid,
   input          DataInReady,
@@ -53,7 +54,7 @@ module UARTInterface(
       DataInValid <= 0;
     end else begin
 
-      if (reading)
+      if (reading & ~stall)
         DataOutReady <= 1;
       else
         DataOutReady <= 0;
