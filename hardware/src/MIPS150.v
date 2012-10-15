@@ -10,6 +10,8 @@ module MIPS150(
 
   wire [31:0] NextPC;
   reg [31:0] PC;
+  
+  wire [11:0] PCtoIMem;
 
   wire [31:0] InstructionD;
   wire [3:0] ALUControlD;
@@ -60,6 +62,7 @@ module MIPS150(
   wire [3:0] InstWriteMaskE; 
   wire [3:0] DataWriteMaskE;
   wire [11:0] MemAddrE;
+  reg  [11:0] OldMemAddrE;
   wire [31:0] ShiftedDataE;
   
 
@@ -113,6 +116,8 @@ module MIPS150(
     .TRIG0(DataOutValid)
   );
 */
+
+  assign PCtoIMem = rst ? 12'b0 : (stall ? PC[13:2] : NextPC[13:2]);
  
   imem_blk_ram instmem(
     .clka(clk),
@@ -121,7 +126,7 @@ module MIPS150(
     .addra(MemAddrE),
     .dina(ShiftedDataE),
     .clkb(clk),
-    .addrb(rst ? 12'b0 : NextPC[13:2]),
+    .addrb(PCtoIMem),
     .doutb(InstructionD)
   );
   
@@ -214,7 +219,7 @@ module MIPS150(
     .clka(clk),
     .ena(1'b1),
     .wea(DataWriteMaskE),
-    .addra(MemAddrE),
+    .addra(stall ? OldMemAddrE : MemAddrE),
     .dina(ShiftedDataE),
     .douta(DMemOutM)
   );  
@@ -246,6 +251,7 @@ module MIPS150(
   UARTInterface ui(
     .clk(clk),
     .rst(rst),
+    .stall(stall),
     .DataIn(DataIn),
     .DataInValid(DataInValid),
     .DataInReady(DataInReady),
@@ -285,6 +291,8 @@ module MIPS150(
       BranchTypeE <= 3'b0;
       ZeroExtE <= 0;
       
+      OldMemAddrE <= 12'b0;
+      
       
       MemWriteM <= 0;
       MemToRegM <= 0;
@@ -314,6 +322,8 @@ module MIPS150(
       MemSizeE <= MemSizeD;
       BranchTypeE <= BranchTypeD;
       ZeroExtE <= ZeroExtD;
+      
+      OldMemAddrE <= MemAddrE;
       
       
       MemWriteM <= MemWriteE;
