@@ -14,6 +14,11 @@ module OutputSelector(input Branch,
                     output reg [31:0] ALUOut);
 
   reg BranchTaken;
+  
+  wire [31:0] SignExtOffset;
+  
+  assign SignExtOffset = Instruction[15] ? { 14'b11111111111111, Instruction[15:0], 2'b00 }
+                                         : { 14'b0, Instruction[15:0], 2'b00 };
                     
   always @(*) begin
     NextPC = newPC + 32'd4;
@@ -42,7 +47,7 @@ module OutputSelector(input Branch,
       endcase  
       
       if (BranchTaken)
-        NextPC = oldPC + 32'd4 + $signed({ Instruction[15:0], 2'b00 });
+        NextPC = oldPC + 32'd4 + SignExtOffset;
     end
   end
 endmodule
