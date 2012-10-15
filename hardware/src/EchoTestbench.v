@@ -20,7 +20,7 @@ module EchoTestbench();
     initial Clock = 0;
     initial stall = 0;
     always #(HalfCycle) Clock <= ~Clock;
-    always #(Cycle) stall <= ~stall;
+    always @(posedge Clock) stall <= ~stall;
 
     // Instantiate your CPU here and connect the FPGA_SERIAL_TX wires
     // to the UART we use for testing
