@@ -28,11 +28,14 @@ module MIPS150(
   wire ZeroExtD;
   wire InvalidD;
 
+  wire [31:0] SignExtImmedD;
+
 
 // E stage
 
 // Comes from prev. stage
   reg [31:0] InstructionE;
+  reg [31:0] SignExtImmedE;
   reg [3:0] ALUControlE;
   reg BranchE;
   reg RegDstE;
@@ -68,6 +71,7 @@ module MIPS150(
 
 
 // Originates in this stage, goes to next.
+  wire [31:0] AddressE;
   wire [31:0] ALUOutE;
   wire [31:0] RegBE;
   wire [4:0]  WriteRegE;
@@ -149,6 +153,9 @@ module MIPS150(
   );
 
 
+  assign SignExtImmedD = (ZeroExtD | ~InstructionD[15]) ? { 16'b0, InstructionD[15:0] } : { 16'hFFFF, InstructionD[15:0] };
+
+
 // Pipeline boundary (mostly) here, on to stage two!
 
   RegFile Registers(
@@ -166,7 +173,7 @@ module MIPS150(
     .Instruction(InstructionE),
     .Drs(RD1E),
     .Drt(RD2E),
-    .ZeroExtend(ZeroExtE),
+    .SignExtImmed(SignExtImmedE),
     .ForwardRD((RegWriteM & ~MemToRegM) ? ALUOutM : 32'b0 ),
     .ForwardRA((RegWriteM & ~MemToRegM) ? WriteRegM : 5'b0 ),
     .ShiftImmediate(ShiftImmediateE),
@@ -176,6 +183,8 @@ module MIPS150(
     .ALUInA(ALUInAE),
     .ALUInB(ALUInBE)    
   );
+
+  assign AddressE = RegAE + SignExtImmedE;
 
   ALU myalu( 
     .A(ALUInAE),
@@ -203,7 +212,7 @@ module MIPS150(
   // This happens in stage two because the inst and dmem are synch read.
 
   MemoryMap mmap(
-    .Address(ALUOutE),
+    .Address(AddressE),
     .WriteData(RegBE),
     .WriteEnable(MemWriteE & ~stall),
     .MemSize(MemSizeE),
@@ -290,7 +299,7 @@ module MIPS150(
       MemSizeE <= 2'b0;
       BranchTypeE <= 3'b0;
       ZeroExtE <= 0;
-      
+      SignExtImmedE <= 32'b0;
       OldMemAddrE <= 12'b0;
       
       
@@ -322,6 +331,7 @@ module MIPS150(
       MemSizeE <= MemSizeD;
       BranchTypeE <= BranchTypeD;
       ZeroExtE <= ZeroExtD;
+      SignExtImmedE <= SignExtImmedD;
       
       OldMemAddrE <= MemAddrE;
       
