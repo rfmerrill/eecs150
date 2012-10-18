@@ -167,7 +167,7 @@ module MIPS150(
     .Drs(RD1E),
     .Drt(RD2E),
     .ZeroExtend(ZeroExtE),
-    .ForwardRD((RegWriteM & ~MemToRegM) ? ResultM : 32'b0 ),
+    .ForwardRD((RegWriteM & ~MemToRegM) ? ALUOutM : 32'b0 ),
     .ForwardRA((RegWriteM & ~MemToRegM) ? WriteRegM : 5'b0 ),
     .ShiftImmediate(ShiftImmediateE),
     .ALUSrc(ALUSrcE),
