@@ -1,0 +1,34 @@
+#!/bin/bash
+
+cd bios_mem/
+echo "Building BIOS Block Ram"
+source build | tee ../build_memories.log
+
+cd ../cache_data_blk_ram/
+echo "Building Cache data Block Ram"
+source build | tee -a ../build_memories.log
+
+cd ../cache_tag_blk_ram/
+echo "Building Cache tag Block Ram"
+source build | tee -a ../build_memories.log
+
+cd ../mig_af/
+echo "Building mig_af"
+source build | tee -a ../build_memories.log
+
+cd ../mig_rdf/
+echo "Building mig_rdf"
+source build | tee -a ../build_memories.log
+
+cd ../mig_wdf/
+echo "Building mig_wdf"
+source build | tee -a ../build_memories.log
+
+cd ../bios_mem/
+echo "Building bios_mem"
+source build | tee -a ../build_memories.log
+
+cd ..
+echo "  "
+echo "  "
+echo "build_memory is done! Please check for warnings and/or errors."
