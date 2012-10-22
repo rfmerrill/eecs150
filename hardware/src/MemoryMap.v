@@ -32,7 +32,7 @@ module MemoryMap (input [31:0] Address,
     end
   end
 
-  assign InstWriteMask = (~Address[31] & Address[29] & WriteEnable) ? WriteMask : 4'b0000;
-  assign DataWriteMask = (~Address[31] & Address[28] & WriteEnable) ? WriteMask : 4'b0000;
+  assign InstWriteMask = (~Address[31] & ~Address[30] & Address[29] & WriteEnable) ? WriteMask : 4'b0000;
+  assign DataWriteMask = (~Address[31] & ~Address[30] & Address[28] & WriteEnable) ? WriteMask : 4'b0000;
 
 endmodule

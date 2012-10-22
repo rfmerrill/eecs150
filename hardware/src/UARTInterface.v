@@ -23,11 +23,16 @@ module UARTInterface(
 
   reg reading;
   reg writing;
+  reg resetcounters;
+  
+  reg [31:0] CycleCounter;
+  reg [31:0] InstrCounter;
 
   always @(*) begin
     Result = FakeResult;
     reading = 0;
     writing = 0;
+    resetcounters = 0;
     
     if (~WriteEnable & MemToReg) begin
       case (ALUOut)
@@ -40,11 +45,16 @@ module UARTInterface(
           else
             Result = { 24'b0, DataOut };
         end
+        
+        32'h80000010: Result = CycleCounter;
+        32'h80000014: Result = InstrCounter;
       endcase
     end 
       
     if (WriteEnable & (ALUOut == 32'h80000008)) 
-      writing = 1;              
+      writing = 1;
+    if (WriteEnable & (ALUOut == 32'h80000018))
+      resetcounters = 1;
   end
 
   always @(posedge clk) begin
@@ -52,7 +62,16 @@ module UARTInterface(
       DataIn <= 8'b0;
       DataOutReady <= 0;
       DataInValid <= 0;
+      CycleCounter <= 32'b0;
+      InstrCounter <= 32'b0;
     end else begin
+      if (resetcounters) begin
+        CycleCounter <= 32'b0;
+        InstrCounter <= 32'b0;
+      end else begin
+        CycleCounter <= (CycleCounter + 32'b1);
+        if (~stall) InstrCounter <= (InstrCounter + 32'b1);
+      end
 
       if (reading & ~stall)
         DataOutReady <= 1;
