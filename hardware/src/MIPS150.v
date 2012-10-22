@@ -20,14 +20,18 @@ module MIPS150(
     input stall
 );
 
+  reg [31:0] CycleCounter;
+  reg [31:0] InstrCounter;
 
 // D stage
 
   wire [31:0] NextPC;
   reg [31:0] PC;
   
-  wire [11:0] PCtoIMem;
+  wire [31:0] PCtoIMem;
 
+  wire [31:0] IMemOutD;
+  wire [31:0] IBIOSOutD;
   wire [31:0] InstructionD;
   wire [3:0] ALUControlD;
   wire BranchD;
@@ -104,6 +108,7 @@ module MIPS150(
   reg [4:0]  WriteRegM;
 
   wire [31:0] DMemOutM;
+  wire [31:0] DBIOSOutM;
   
   wire [31:0] ResultM;
   wire [31:0] FakeResultM;
@@ -136,8 +141,15 @@ module MIPS150(
   );
 */
 
-  assign PCtoIMem = rst ? 12'b0 : (stall ? PC[13:2] : NextPC[13:2]);
- 
+
+
+  assign PCtoIMem = rst ? 32'b0 : (stall ? PC : NextPC);
+  
+  assign icache_re = ~(PCtoIMem[31:28] == 4'b0100);
+  assign icache_addr = (icache_re ? PCtoIMem : dcache_addr) & 32'h1FFFFFFF;
+  assign IMemOutD = instruction;
+
+/* 
   imem_blk_ram instmem(
     .clka(clk),
     .ena(1'b1),
@@ -146,9 +158,32 @@ module MIPS150(
     .dina(ShiftedDataE),
     .clkb(clk),
     .addrb(PCtoIMem),
-    .doutb(InstructionD)
+    .doutb(IMemOutD)
   );
+*/
   
+/*
+  dmem_blk_ram datamem(
+    .clka(clk),
+    .ena(1'b1),
+    .wea(DataWriteMaskE),
+    .addra(stall ? OldMemAddrE : MemAddrE),
+    .dina(ShiftedDataE),
+    .douta(DMemOutM)
+  );   
+*/
+  bios_mem bios(
+    .clka(clk),
+    .ena(1'b1),
+    .addra(PCtoIMem[13:2]),
+    .douta(IBIOSOutD),
+    .clkb(clk),
+    .enb(1'b1),
+    .addrb(stall ? OldMemAddrE : MemAddrE),
+    .doutb(DBIOSOutM)
+  );
+
+  assign InstructionD = (PC[31:28] == 4'b0100) ? IBIOSOutD : IMemOutD;
 
   InstructionDecoder decoder(
     .Instruction(InstructionD),
@@ -238,20 +273,23 @@ module MIPS150(
   );
 
   // The memory itself is kind of across stages
+  
+  assign dcache_addr = (stall ? ALUOutM : AddressE) & 32'h1FFFFFFF;
+  
+  assign dcache_re = MemToRegE & ((dcache_addr[31:28] == 4'b0001) | (dcache_addr[31:28] == 4'b0011));
 
-  dmem_blk_ram datamem(
-    .clka(clk),
-    .ena(1'b1),
-    .wea(DataWriteMaskE),
-    .addra(stall ? OldMemAddrE : MemAddrE),
-    .dina(ShiftedDataE),
-    .douta(DMemOutM)
-  );  
+  assign dcache_we = DataWriteMaskE;
+  assign icache_we = (PCE[30]) ? InstWriteMaskE : 4'b0000;
+
+  assign dcache_din = ShiftedDataE;
+  assign icache_din = ShiftedDataE;
+  
+  assign DMemOutM = dcache_dout;
   
   
   MemoryUnMap munmap(
     .MemToReg(MemToRegM),
-    .MemOut(DMemOutM),
+    .MemOut((ALUOutM[31:28] == 4'b0100) ? DBIOSOutM : DMemOutM),
     .MemSize(MemSizeM),
     .LoadUnsigned(LoadUnsignedM),
     .ALUOut(ALUOutM),
@@ -298,8 +336,11 @@ module MIPS150(
 
  
     if (rst) begin
-      PC <= 32'b0;
-      PCE <= 32'b0;    
+      PC <= 32'h40000000;
+      PCE <= 32'h40000000;
+      
+      CycleCounter <= 32'b0;
+      InstrCounter <= 32'b0;
       
       InstructionE <= 32'b0;
       ALUControlE <= 4'b0;
