@@ -1,0 +1,4 @@
+#!/bin/bash
+
+find . ! -name '*.xco' -a ! -name '*.coe' -a ! -name 'clean' -a ! -name 'build' -delete
+rm -rf tmp/
