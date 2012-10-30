@@ -20,9 +20,6 @@ module MIPS150(
     input stall
 );
 
-  reg [31:0] CycleCounter;
-  reg [31:0] InstrCounter;
-
 // D stage
 
   wire [31:0] NextPC;
@@ -122,26 +119,10 @@ module MIPS150(
   wire [7:0] DataOut;
 
 
-  wire [35:0] csctrl;
-
-/*  
-  chipscope_icon ICON(
-   .CONTROL0(csctrl)
-  );
-
-  chipscope_ila ILA(
-    .CONTROL(csctrl),
-    .CLK(clk),
-    .DATA({NextPC, InstructionE, FPGA_SERIAL_TX, FPGA_SERIAL_RX, clk, stall, rst, 19'b0,
-           MemWriteM, MemToRegM, RegWriteM, WriteRegM, ResultM,
-           ALUOutM, wtf, 32'b0,
-           DataInValid, DataInReady, DataOutValid, DataOutReady, 12'b0,
-           DataIn, DataOut} ),
-    .TRIG0(DataOutValid)
-  );
-*/
-
-
+  always @(posedge clk) begin
+    if (rst) PC <= 32'h40000000;
+    else if (~stall) PC <= NextPC;
+  end
 
   assign PCtoIMem = rst ? 32'b0 : (stall ? PC : NextPC);
   
@@ -149,29 +130,7 @@ module MIPS150(
   assign icache_addr = (icache_re ? PCtoIMem : dcache_addr) & 32'h1FFFFFFF;
   assign IMemOutD = instruction;
 
-/* 
-  imem_blk_ram instmem(
-    .clka(clk),
-    .ena(1'b1),
-    .wea(InstWriteMaskE),
-    .addra(MemAddrE),
-    .dina(ShiftedDataE),
-    .clkb(clk),
-    .addrb(PCtoIMem),
-    .doutb(IMemOutD)
-  );
-*/
-  
-/*
-  dmem_blk_ram datamem(
-    .clka(clk),
-    .ena(1'b1),
-    .wea(DataWriteMaskE),
-    .addra(stall ? OldMemAddrE : MemAddrE),
-    .dina(ShiftedDataE),
-    .douta(DMemOutM)
-  );   
-*/
+
   bios_mem bios(
     .clka(clk),
     .ena(1'b1),
@@ -205,8 +164,45 @@ module MIPS150(
 
   assign SignExtImmedD = (ZeroExtD | ~InstructionD[15]) ? { 16'b0, InstructionD[15:0] } : { 16'hFFFF, InstructionD[15:0] };
 
-
-// Pipeline boundary (mostly) here, on to stage two!
+  always @(posedge clk) begin
+    if (rst) begin
+      PCE <= 32'h40000000;
+      InstructionE <= 32'b0;
+      ALUControlE <= 4'b0;
+      BranchE <= 0;
+      RegDstE <= 0;
+      ALUSrcE <= 0;
+      ShiftImmediateE <= 0;
+      MemWriteE <= 0;
+      MemToRegE <= 0;
+      RegWriteE <= 0;
+      LoadUnsignedE <= 0;
+      MemSizeE <= 2'b0;
+      BranchTypeE <= 3'b0;
+      ZeroExtE <= 0;
+      SignExtImmedE <= 32'b0;
+      OldMemAddrE <= 12'b0;
+    end else if (~stall) begin  
+      // Every clock cycle, the pipeline marches along happily~
+        
+      PCE <= PC;
+      InstructionE <= InstructionD;
+      ALUControlE <= ALUControlD;
+      BranchE <= BranchD;
+      RegDstE <= RegDstD;
+      ALUSrcE <= ALUSrcD;
+      ShiftImmediateE <= ShiftImmediateD;
+      MemWriteE <= MemWriteD;
+      MemToRegE <= MemToRegD;
+      RegWriteE <= RegWriteD;
+      LoadUnsignedE <= LoadUnsignedD;
+      MemSizeE <= MemSizeD;
+      BranchTypeE <= BranchTypeD;
+      ZeroExtE <= ZeroExtD;
+      SignExtImmedE <= SignExtImmedD;
+      OldMemAddrE <= MemAddrE;
+    end    
+  end
 
   RegFile Registers(
     .clk(clk),
@@ -287,6 +283,29 @@ module MIPS150(
   assign DMemOutM = dcache_dout;
   
   
+  always @(posedge clk) begin
+    if (rst) begin
+      MemWriteM <= 0;
+      MemToRegM <= 0;
+      RegWriteM <= 0;
+      LoadUnsignedM <= 0;
+      MemSizeM <= 2'b0;
+      ALUOutM <= 32'b0;
+      WriteDataM <= 32'b0;
+      WriteRegM <= 0;
+    end else if (~stall) begin  
+      MemWriteM <= MemWriteE;
+      MemToRegM <= MemToRegE;
+      RegWriteM <= RegWriteE;
+      LoadUnsignedM <= LoadUnsignedE;
+      MemSizeM <= MemSizeE;
+      ALUOutM <= ALUOutE;
+      WriteDataM <= RegBE;
+      WriteRegM <= WriteRegE;
+    end    
+  end
+  
+  
   MemoryUnMap munmap(
     .MemToReg(MemToRegM),
     .MemOut((ALUOutM[31:28] == 4'b0100) ? DBIOSOutM : DMemOutM),
@@ -332,78 +351,6 @@ module MIPS150(
 
 
 
-  always @(posedge clk) begin
 
- 
-    if (rst) begin
-      PC <= 32'h40000000;
-      PCE <= 32'h40000000;
-      
-      CycleCounter <= 32'b0;
-      InstrCounter <= 32'b0;
-      
-      InstructionE <= 32'b0;
-      ALUControlE <= 4'b0;
-      BranchE <= 0;
-      RegDstE <= 0;
-      ALUSrcE <= 0;
-      ShiftImmediateE <= 0;
-      MemWriteE <= 0;
-      MemToRegE <= 0;
-      RegWriteE <= 0;
-      LoadUnsignedE <= 0;
-      MemSizeE <= 2'b0;
-      BranchTypeE <= 3'b0;
-      ZeroExtE <= 0;
-      SignExtImmedE <= 32'b0;
-      OldMemAddrE <= 12'b0;
-      
-      
-      MemWriteM <= 0;
-      MemToRegM <= 0;
-      RegWriteM <= 0;
-      LoadUnsignedM <= 0;
-      MemSizeM <= 2'b0;
-      ALUOutM <= 32'b0;
-      WriteDataM <= 32'b0;
-      WriteRegM <= 0;
-    end else if (~stall) begin
-    
-      // Every clock cycle, the pipeline marches along happily~
-    
-      PC <= NextPC;
-    
-      PCE <= PC;
-      InstructionE <= InstructionD;
-      ALUControlE <= ALUControlD;
-      BranchE <= BranchD;
-      RegDstE <= RegDstD;
-      ALUSrcE <= ALUSrcD;
-      ShiftImmediateE <= ShiftImmediateD;
-      MemWriteE <= MemWriteD;
-      MemToRegE <= MemToRegD;
-      RegWriteE <= RegWriteD;
-      LoadUnsignedE <= LoadUnsignedD;
-      MemSizeE <= MemSizeD;
-      BranchTypeE <= BranchTypeD;
-      ZeroExtE <= ZeroExtD;
-      SignExtImmedE <= SignExtImmedD;
-      
-      OldMemAddrE <= MemAddrE;
-      
-      
-      MemWriteM <= MemWriteE;
-      MemToRegM <= MemToRegE;
-      RegWriteM <= RegWriteE;
-      LoadUnsignedM <= LoadUnsignedE;
-      MemSizeM <= MemSizeE;
-      ALUOutM <= ALUOutE;
-      WriteDataM <= RegBE;
-      WriteRegM <= WriteRegE;
-  
-      
-    end
-    
-  end
 
 endmodule
