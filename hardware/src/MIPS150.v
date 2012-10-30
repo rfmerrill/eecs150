@@ -20,15 +20,51 @@ module MIPS150(
     input stall
 );
 
-// D stage
+// First, stuff that exists kind of outside stages.
 
   wire [31:0] NextPC;
   reg [31:0] PC;
+
+  always @(posedge clk) begin
+    if (rst) PC <= 32'h40000000;
+    else if (~stall) PC <= NextPC;
+  end
   
+
   wire [31:0] PCtoIMem;
 
-  wire [31:0] IMemOutD;
-  wire [31:0] IBIOSOutD;
+  assign PCtoIMem = rst ? 32'b0 : (stall ? PC : NextPC);
+  
+  assign icache_re = ~(PCtoIMem[31:28] == 4'b0100);
+  assign icache_addr = (icache_re ? PCtoIMem : dcache_addr) & 32'h1FFFFFFF;
+
+  wire [11:0] MemAddr;
+  reg  [11:0] OldMemAddr;
+  wire [31:0] BIOSOutA;
+  wire [31:0] BIOSOutB;
+    
+  always @(posedge clk) begin
+    if (rst) OldMemAddr <= 12'b0;
+    else if (~stall) OldMemAddr <= MemAddr;
+  end
+
+  bios_mem bios(
+    .clka(clk),
+    .ena(1'b1),
+    .addra(PCtoIMem[13:2]),
+    .douta(BIOSOutA),
+    .clkb(clk),
+    .enb(1'b1),
+    .addrb(stall ? OldMemAddr : MemAddr),
+    .doutb(BIOSOutB)
+  );
+
+
+
+// ******************************
+// ******** DECODE STAGE ********
+// ******************************
+
   wire [31:0] InstructionD;
   wire [3:0] ALUControlD;
   wire BranchD;
@@ -47,50 +83,6 @@ module MIPS150(
   wire [31:0] SignExtImmedD;
 
 
-// E stage
-
-// Comes from prev. stage
-  reg [31:0] InstructionE;
-  reg [31:0] SignExtImmedE;
-  reg [3:0] ALUControlE;
-  reg BranchE;
-  reg RegDstE;
-  reg ALUSrcE;
-  reg ShiftImmediateE;
-  reg MemWriteE;
-  reg MemToRegE;
-  reg RegWriteE;
-  reg LoadUnsignedE;
-  reg [1:0] MemSizeE;
-  reg [2:0] BranchTypeE;
-  reg ZeroExtE;
-  reg [31:0] PCE;
-
-
-// Exists only in this stage.
-  
-  wire [31:0] RD1E;
-  wire [31:0] RD2E;
-  
-  wire [31:0] RegAE;
-  wire [31:0] ALUInAE;
-  wire [31:0] ALUInBE;
-  
-  wire [31:0] ActualALUOutE;
-  
-  wire [3:0] InstWriteMaskE; 
-  wire [3:0] DataWriteMaskE;
-  wire [11:0] MemAddrE;
-  reg  [11:0] OldMemAddrE;
-  wire [31:0] ShiftedDataE;
-  
-
-
-// Originates in this stage, goes to next.
-  wire [31:0] AddressE;
-  wire [31:0] ALUOutE;
-  wire [31:0] RegBE;
-  wire [4:0]  WriteRegE;
 
 // M stage  
   
@@ -105,7 +97,6 @@ module MIPS150(
   reg [4:0]  WriteRegM;
 
   wire [31:0] DMemOutM;
-  wire [31:0] DBIOSOutM;
   
   wire [31:0] ResultM;
   wire [31:0] FakeResultM;
@@ -119,30 +110,8 @@ module MIPS150(
   wire [7:0] DataOut;
 
 
-  always @(posedge clk) begin
-    if (rst) PC <= 32'h40000000;
-    else if (~stall) PC <= NextPC;
-  end
 
-  assign PCtoIMem = rst ? 32'b0 : (stall ? PC : NextPC);
-  
-  assign icache_re = ~(PCtoIMem[31:28] == 4'b0100);
-  assign icache_addr = (icache_re ? PCtoIMem : dcache_addr) & 32'h1FFFFFFF;
-  assign IMemOutD = instruction;
-
-
-  bios_mem bios(
-    .clka(clk),
-    .ena(1'b1),
-    .addra(PCtoIMem[13:2]),
-    .douta(IBIOSOutD),
-    .clkb(clk),
-    .enb(1'b1),
-    .addrb(stall ? OldMemAddrE : MemAddrE),
-    .doutb(DBIOSOutM)
-  );
-
-  assign InstructionD = (PC[31:28] == 4'b0100) ? IBIOSOutD : IMemOutD;
+  assign InstructionD = (PC[31:28] == 4'b0100) ? BIOSOutA : instruction;
 
   InstructionDecoder decoder(
     .Instruction(InstructionD),
@@ -164,6 +133,29 @@ module MIPS150(
 
   assign SignExtImmedD = (ZeroExtD | ~InstructionD[15]) ? { 16'b0, InstructionD[15:0] } : { 16'hFFFF, InstructionD[15:0] };
 
+
+// *******************************
+// ******** EXECUTE STAGE ********
+// *******************************
+
+// Pipeline stuff from decode stage
+  reg [31:0] InstructionE;
+  reg [31:0] SignExtImmedE;
+  reg [3:0] ALUControlE;
+  reg BranchE;
+  reg RegDstE;
+  reg ALUSrcE;
+  reg ShiftImmediateE;
+  reg MemWriteE;
+  reg MemToRegE;
+  reg RegWriteE;
+  reg LoadUnsignedE;
+  reg [1:0] MemSizeE;
+  reg [2:0] BranchTypeE;
+  reg ZeroExtE;
+  reg [31:0] PCE;
+
+
   always @(posedge clk) begin
     if (rst) begin
       PCE <= 32'h40000000;
@@ -181,7 +173,7 @@ module MIPS150(
       BranchTypeE <= 3'b0;
       ZeroExtE <= 0;
       SignExtImmedE <= 32'b0;
-      OldMemAddrE <= 12'b0;
+      OldMemAddr <= 12'b0;
     end else if (~stall) begin  
       // Every clock cycle, the pipeline marches along happily~
         
@@ -200,9 +192,35 @@ module MIPS150(
       BranchTypeE <= BranchTypeD;
       ZeroExtE <= ZeroExtD;
       SignExtImmedE <= SignExtImmedD;
-      OldMemAddrE <= MemAddrE;
+      OldMemAddr <= MemAddr;
     end    
   end
+
+
+// Internal to this stage
+  
+  wire [31:0] RD1E;
+  wire [31:0] RD2E;
+  
+  wire [31:0] RegAE;
+  wire [31:0] ALUInAE;
+  wire [31:0] ALUInBE;
+  
+  wire [31:0] ActualALUOutE;
+  
+  wire [3:0] InstWriteMaskE; 
+  wire [3:0] DataWriteMaskE;
+  wire [31:0] ShiftedDataE;
+  
+
+
+// Originates in this stage, goes to next.
+  wire [31:0] AddressE;
+  wire [31:0] ALUOutE;
+  wire [31:0] RegBE;
+  wire [4:0]  WriteRegE;
+
+
 
   RegFile Registers(
     .clk(clk),
@@ -262,7 +280,7 @@ module MIPS150(
     .WriteData(RegBE),
     .WriteEnable(MemWriteE & ~stall),
     .MemSize(MemSizeE),
-    .MemAddr(MemAddrE),
+    .MemAddr(MemAddr),
     .InstWriteMask(InstWriteMaskE),
     .DataWriteMask(DataWriteMaskE),
     .ShiftedData(ShiftedDataE)
@@ -308,7 +326,7 @@ module MIPS150(
   
   MemoryUnMap munmap(
     .MemToReg(MemToRegM),
-    .MemOut((ALUOutM[31:28] == 4'b0100) ? DBIOSOutM : DMemOutM),
+    .MemOut((ALUOutM[31:28] == 4'b0100) ? BIOSOutB : DMemOutM),
     .MemSize(MemSizeM),
     .LoadUnsigned(LoadUnsignedM),
     .ALUOut(ALUOutM),
