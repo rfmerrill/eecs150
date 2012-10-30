@@ -8,11 +8,11 @@ module MIPS150(
 
     // Memory system connections
     output [31:0] dcache_addr,
-    output [31:0] icache_addr,
+    output reg [31:0] icache_addr,
     output [3:0] dcache_we,
     output [3:0] icache_we,
     output dcache_re,
-    output icache_re,
+    output reg icache_re,
     output [31:0] dcache_din,
     output [31:0] icache_din,
     input [31:0] dcache_dout,
@@ -20,24 +20,9 @@ module MIPS150(
     input stall
 );
 
-// First, stuff that exists kind of outside stages.
+  // BIOS memory.
 
-  wire [31:0] NextPC;
-  reg [31:0] PC;
-
-  always @(posedge clk) begin
-    if (rst) PC <= 32'h40000000;
-    else if (~stall) PC <= NextPC;
-  end
-  
-
-  wire [31:0] PCtoIMem;
-
-  assign PCtoIMem = rst ? 32'b0 : (stall ? PC : NextPC);
-  
-  assign icache_re = ~(PCtoIMem[31:28] == 4'b0100);
-  assign icache_addr = (icache_re ? PCtoIMem : dcache_addr) & 32'h1FFFFFFF;
-
+  wire [11:0] IMemAddr;
   wire [11:0] MemAddr;
   reg  [11:0] OldMemAddr;
   wire [31:0] BIOSOutA;
@@ -51,13 +36,44 @@ module MIPS150(
   bios_mem bios(
     .clka(clk),
     .ena(1'b1),
-    .addra(PCtoIMem[13:2]),
+    .addra(IMemAddr),
     .douta(BIOSOutA),
     .clkb(clk),
     .enb(1'b1),
     .addrb(stall ? OldMemAddr : MemAddr),
     .doutb(BIOSOutB)
   );
+
+
+// Instruction fetch logic (technically part of the decode stage?)
+
+  wire [31:0] NextPC;
+  reg [31:0] PCD;
+  reg [31:0] PC;
+  
+  assign IMemAddr = PC[13:2];
+  
+  always @(*) begin
+    if (rst)
+      PC = 32'h40000000;
+    else if (stall)
+      PC = PCD;
+    else 
+      PC = NextPC;
+      
+    if (PC[31:28] == 4'b0100) begin
+      // Executing from BIOS
+      icache_re = 0;
+      icache_addr = dcache_addr & 32'h1FFFFFFF;
+    end else begin
+      // Executing from instruction cache
+      icache_re = 1;
+      icache_addr = PC & 32'h1FFFFFFF;
+    end
+  end
+  
+  always @(posedge clk) PCD <= PC;
+
 
 
 
@@ -111,7 +127,7 @@ module MIPS150(
 
 
 
-  assign InstructionD = (PC[31:28] == 4'b0100) ? BIOSOutA : instruction;
+  assign InstructionD = (PCD[31:28] == 4'b0100) ? BIOSOutA : instruction;
 
   InstructionDecoder decoder(
     .Instruction(InstructionD),
@@ -177,7 +193,7 @@ module MIPS150(
     end else if (~stall) begin  
       // Every clock cycle, the pipeline marches along happily~
         
-      PCE <= PC;
+      PCE <= PCD;
       InstructionE <= InstructionD;
       ALUControlE <= ALUControlD;
       BranchE <= BranchD;
@@ -264,7 +280,7 @@ module MIPS150(
     .BranchType(BranchTypeE),
     .Instruction(InstructionE),
     .oldPC(PCE),
-    .newPC(PC),
+    .newPC(PCD),
     .RegA(RegAE),
     .RegB(RegBE),
     .NextPC(NextPC),
