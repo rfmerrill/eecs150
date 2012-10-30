@@ -184,7 +184,6 @@ module MIPS150(
     end    
   end
 
-
 // Internal to this stage
   
   wire [31:0] RD1E;
@@ -200,20 +199,17 @@ module MIPS150(
   wire [3:0] DataWriteMaskE;
   wire [31:0] ShiftedDataE;
   
-
-
 // Originates in this stage, goes to next.
   wire [31:0] AddressE;
   wire [31:0] ALUOutE;
   wire [31:0] RegBE;
   wire [4:0]  WriteRegE;
 
-
-
 // Declare some signals so that the M stage
 // Can talk to the regfile
 
   wire        reg_we;
+  wire        reg_fwd;
   wire [4:0]  reg_wa;
   wire [31:0] reg_wd;
 
@@ -233,8 +229,8 @@ module MIPS150(
     .Drs(RD1E),
     .Drt(RD2E),
     .SignExtImmed(SignExtImmedE),
-    .ForwardRD((RegWriteM & ~MemToRegM) ? ALUOutM : 32'b0 ),
-    .ForwardRA((RegWriteM & ~MemToRegM) ? WriteRegM : 5'b0 ),
+    .ForwardRD(reg_fwd ? reg_wd : 32'b0 ),
+    .ForwardRA(reg_fwd ? reg_wa : 5'b0 ),
     .ShiftImmediate(ShiftImmediateE),
     .ALUSrc(ALUSrcE),
     .RegA(RegAE),
@@ -282,6 +278,11 @@ module MIPS150(
   );
 
   // The memory itself is kind of across stages
+
+  // ******************************
+  // ******** WRITE STAGE ********
+  // ******************************
+
   
   assign dcache_addr = (stall ? ALUOutM : AddressE) & 32'h1FFFFFFF;
   
@@ -313,6 +314,7 @@ module MIPS150(
   assign DMemOutM = dcache_dout;
   
   assign reg_we = RegWriteM;
+  assign reg_fwd = RegWriteM & ~MemToRegM;
   assign reg_wa = WriteRegM;
   assign reg_wd = ResultM;
   
@@ -348,6 +350,8 @@ module MIPS150(
     .ALUOut(ALUOutM),
     .Result(FakeResultM)
   );
+  
+
 
   wire DataInValid;
   wire DataOutValid;
