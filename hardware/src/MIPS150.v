@@ -99,34 +99,6 @@ module MIPS150(
   wire [31:0] SignExtImmedD;
 
 
-
-// M stage  
-  
-  reg MemWriteM;
-  reg MemToRegM;
-  reg RegWriteM;
-  reg LoadUnsignedM;
-  reg [1:0] MemSizeM;
-
-  reg [31:0] ALUOutM;
-  reg [31:0] WriteDataM;
-  reg [4:0]  WriteRegM;
-
-  wire [31:0] DMemOutM;
-  
-  wire [31:0] ResultM;
-  wire [31:0] FakeResultM;
-   
-  wire DataInValid;
-  wire DataOutValid;
-  wire DataInReady;
-  wire DataOutReady;
-  
-  wire [7:0] DataIn;
-  wire [7:0] DataOut;
-
-
-
   assign InstructionD = (PCD[31:28] == 4'b0100) ? BIOSOutA : instruction;
 
   InstructionDecoder decoder(
@@ -238,13 +210,20 @@ module MIPS150(
 
 
 
+// Declare some signals so that the M stage
+// Can talk to the regfile
+
+  wire        reg_we;
+  wire [4:0]  reg_wa;
+  wire [31:0] reg_wd;
+
   RegFile Registers(
     .clk(clk),
-    .we(RegWriteM),
+    .we(reg_we),
     .ra1(InstructionE[25:21]),
     .ra2(InstructionE[20:16]),
-    .wa(WriteRegM),
-    .wd(ResultM),
+    .wa(reg_wa),
+    .wd(reg_wd),
     .rd1(RD1E),
     .rd2(RD2E)
   );
@@ -314,7 +293,28 @@ module MIPS150(
   assign dcache_din = ShiftedDataE;
   assign icache_din = ShiftedDataE;
   
+
+  reg MemWriteM;
+  reg MemToRegM;
+  reg RegWriteM;
+  reg LoadUnsignedM;
+  reg [1:0] MemSizeM;
+
+  reg [31:0] ALUOutM;
+  reg [31:0] WriteDataM;
+  reg [4:0]  WriteRegM;
+
+  wire [31:0] DMemOutM;
+  
+  wire [31:0] ResultM;
+  wire [31:0] FakeResultM;
+
+
   assign DMemOutM = dcache_dout;
+  
+  assign reg_we = RegWriteM;
+  assign reg_wa = WriteRegM;
+  assign reg_wd = ResultM;
   
   
   always @(posedge clk) begin
@@ -348,6 +348,14 @@ module MIPS150(
     .ALUOut(ALUOutM),
     .Result(FakeResultM)
   );
+
+  wire DataInValid;
+  wire DataOutValid;
+  wire DataInReady;
+  wire DataOutReady;
+  
+  wire [7:0] DataIn;
+  wire [7:0] DataOut;
 
 
   UART serport(
