@@ -67,7 +67,7 @@ assign next_ip          = ip | interrupts;
 
 always@(*) begin
     case(DataAddress)
-        5'h4:       dataout <= epc;
+        5'hE:       dataout <= epc;
         5'h9:       dataout <= count;
         5'hB:       dataout <= compare;
         5'hC:       dataout <= status;
