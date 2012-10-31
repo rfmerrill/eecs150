@@ -90,7 +90,7 @@ always@(posedge Clock) begin
                 count   <= DataAddress == 5'h9 ? DataIn : count + 1;
                 compare <= DataAddress == 5'hB ? DataIn : compare;
                 status  <= DataAddress == 5'hC ? DataIn : status;
-                cause   <= DataAddress == 5'hD ? {DataIn[31:16], next_ip | DataIn[15:10], DataIn[9:0]}
+                cause   <= DataAddress == 5'hD ? {DataIn[31:16], next_ip & DataIn[15:10], DataIn[9:0]}
                          : DataAddress == 5'hB ? {cause[31:16], 1'b0, next_ip[4:0], cause[9:0]}
                          :                       {cause[31:16], next_ip, cause[9:0]};
             end else if(InterruptHandled) begin
