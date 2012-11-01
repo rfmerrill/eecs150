@@ -212,6 +212,7 @@ module MIPS150(
   wire        reg_fwd;
   wire [4:0]  reg_wa;
   wire [31:0] reg_wd;
+  wire [31:0] reg_fwd_wd;
 
   RegFile Registers(
     .clk(clk),
@@ -229,7 +230,7 @@ module MIPS150(
     .Drs(RD1E),
     .Drt(RD2E),
     .SignExtImmed(SignExtImmedE),
-    .ForwardRD(reg_fwd ? reg_wd : 32'b0 ),
+    .ForwardRD(reg_fwd ? reg_fwd_wd : 32'b0 ),
     .ForwardRA(reg_fwd ? reg_wa : 5'b0 ),
     .ShiftImmediate(ShiftImmediateE),
     .ALUSrc(ALUSrcE),
@@ -284,15 +285,6 @@ module MIPS150(
   // ******************************
 
   
-  assign dcache_addr = (stall ? ALUOutM : AddressE) & 32'h1FFFFFFF;
-  
-  assign dcache_re = MemToRegE & ((dcache_addr[31:28] == 4'b0001) | (dcache_addr[31:28] == 4'b0011));
-
-  assign dcache_we = DataWriteMaskE;
-  assign icache_we = (PCE[30]) ? InstWriteMaskE : 4'b0000;
-
-  assign dcache_din = ShiftedDataE;
-  assign icache_din = ShiftedDataE;
   
 
   reg MemWriteM;
@@ -310,6 +302,17 @@ module MIPS150(
   wire [31:0] ResultM;
   wire [31:0] FakeResultM;
 
+  assign dcache_addr = (stall ? ALUOutM : AddressE) & 32'h1FFFFFFF;
+  
+  assign dcache_re = MemToRegE & ((dcache_addr[31:28] == 4'b0001) | (dcache_addr[31:28] == 4'b0011));
+
+  assign dcache_we = DataWriteMaskE;
+  assign icache_we = (PCE[30]) ? InstWriteMaskE : 4'b0000;
+
+  assign dcache_din = ShiftedDataE;
+  assign icache_din = ShiftedDataE;
+
+
 
   assign DMemOutM = dcache_dout;
   
@@ -317,6 +320,7 @@ module MIPS150(
   assign reg_fwd = RegWriteM & ~MemToRegM;
   assign reg_wa = WriteRegM;
   assign reg_wd = ResultM;
+  assign reg_fwd_wd = ALUOutM;
   
   
   always @(posedge clk) begin
