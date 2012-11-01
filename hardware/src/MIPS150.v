@@ -184,14 +184,8 @@ module MIPS150(
     end    
   end
 
-// Internal to this stage
-  
-  wire [4:0] RA1E;
-  wire [4:0] RA2E;
-  
-  wire [31:0] RD1E;
-  wire [31:0] RD2E;
-  
+
+ 
   wire [31:0] RegAE;
   wire [31:0] ALUInAE;
   wire [31:0] ALUInBE;
@@ -202,7 +196,6 @@ module MIPS150(
   wire [3:0] DataWriteMaskE;
   wire [31:0] ShiftedDataE;
   
-// Originates in this stage, goes to next.
   wire [31:0] AddressE;
   wire [31:0] ALUOutE;
   wire [31:0] RegBE;
@@ -217,24 +210,41 @@ module MIPS150(
   wire [31:0] reg_wd;
   wire [31:0] reg_fwd_wd;
 
-  assign RA1E = InstructionE[25:21];
-  assign RA2E = InstructionE[20:16];
+// Other RegFile-related signals
+  wire [4:0] rs_addr_E;
+  wire [4:0] rt_addr_E;
+  wire [4:0] rd_addr_E
+  
+  wire [31:0] rs_data_E;
+  wire [31:0] rt_data_E;
+
+
+  assign rs_addr_E = InstructionE[25:21];
+  assign rt_addr_E = InstructionE[20:16];
 
   RegFile Registers(
     .clk(clk),
     .we(reg_we),
-    .ra1(RA1E),
-    .ra2(RA2E),
+    .ra1(rs_addr_E),
+    .ra2(rt_addr_E),
     .wa(reg_wa),
     .wd(reg_wd),
-    .rd1(RD1E),
-    .rd2(RD2E)
+    .rd1(rs_data_E),
+    .rd2(rt_data_E)
   );
 
+  wire [31:0] RegAE;
+  wire [31:0] ALUInAE;
+  wire [31:0] ALUInBE;
 
-  assign RegAE = (reg_fwd & (reg_wa == RA1E)) ? reg_fwd_wd : RD1E;
-  assign RegBE = (reg_fwd & (reg_wa == RA2E)) ? reg_fwd_wd : RD2E;
-    
+  // Handle forwarding. Maybe this violates the control/datapath paradigm
+  // but I don't see a non-hairy way to do it otherwise
+
+  assign RegAE = (reg_fwd & (reg_wa == rs_addr_E)) ? reg_fwd_wd : rs_data_E;
+  assign RegBE = (reg_fwd & (reg_wa == rt_addr_E)) ? reg_fwd_wd : rt_data_E;
+  
+  // These are distinct from the above because branching
+  // doesn't use them.   
   assign ALUInAE = ShiftImmediateE ? { 27'b0, InstructionE[10:6] } : RegAE;
   assign ALUInBE = ALUSrcE ? SignExtImmedE : RegBE;
 
