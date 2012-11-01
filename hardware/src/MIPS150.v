@@ -186,6 +186,9 @@ module MIPS150(
 
 // Internal to this stage
   
+  wire [4:0] RA1E;
+  wire [4:0] RA2E;
+  
   wire [31:0] RD1E;
   wire [31:0] RD2E;
   
@@ -214,31 +217,26 @@ module MIPS150(
   wire [31:0] reg_wd;
   wire [31:0] reg_fwd_wd;
 
+  assign RA1E = InstructionE[25:21];
+  assign RA2E = InstructionE[20:16];
+
   RegFile Registers(
     .clk(clk),
     .we(reg_we),
-    .ra1(InstructionE[25:21]),
-    .ra2(InstructionE[20:16]),
+    .ra1(RA1E),
+    .ra2(RA2E),
     .wa(reg_wa),
     .wd(reg_wd),
     .rd1(RD1E),
     .rd2(RD2E)
   );
 
-  InputSelector isel(
-    .Instruction(InstructionE),
-    .Drs(RD1E),
-    .Drt(RD2E),
-    .SignExtImmed(SignExtImmedE),
-    .ForwardRD(reg_fwd ? reg_fwd_wd : 32'b0 ),
-    .ForwardRA(reg_fwd ? reg_wa : 5'b0 ),
-    .ShiftImmediate(ShiftImmediateE),
-    .ALUSrc(ALUSrcE),
-    .RegA(RegAE),
-    .RegB(RegBE),
-    .ALUInA(ALUInAE),
-    .ALUInB(ALUInBE)    
-  );
+
+  assign RegAE = (reg_fwd & (reg_wa == RA1E)) ? reg_fwd_wd : RD1E;
+  assign RegBE = (reg_fwd & (reg_wa == RA2E)) ? reg_fwd_wd : RD2E;
+    
+  assign ALUInAE = ShiftImmediateE ? { 27'b0, InstructionE[10:6] } : RegAE;
+  assign ALUInBE = ALUSrcE ? SignExtImmedE : RegBE;
 
   assign AddressE = RegAE + SignExtImmedE;
 
