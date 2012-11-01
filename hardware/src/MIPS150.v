@@ -184,61 +184,14 @@ module MIPS150(
     end    
   end
 
-// Regfile stuff
- 
-  wire [4:0] rsE;
-  wire [4:0] rtE;
-
-  assign rsE = Instruction[25:21];
-  assign rtE = Instruction[20:16];
+// Internal to this stage
   
-// The reg_ signals come from the writeback stage
-
-  wire        reg_we;
-  wire        reg_fwd;
-  wire [4:0]  reg_wa;
-  wire [31:0] reg_wd;
   wire [31:0] RD1E;
   wire [31:0] RD2E;
-
-  RegFile Registers(
-    .clk(clk),
-    .we(reg_we),
-    .ra1(rsE),
-    .ra2(rtE),
-    .wa(reg_wa),
-    .wd(reg_wd),
-    .rd1(RD1E),
-    .rd2(RD2E)
-  );
-
-// Select ALU inputs
-
-  reg [31:0] RegAE;
-  reg [31:0] RegBE;
-  reg [31:0] ALUInAE;
-  reg [31:0] ALUInBE;
   
-  always @(*) begin
-    RegAE = RD1E;
-    RegBE = RD2E;
-    
-    if (reg_fwd) begin
-      if (reg_wa == rsE)
-        RegAE = reg_wd;
-      if (reg_wa == rtE)
-        RegBE = reg_wd;
-    end
-    
-    ALUInAE = RegAE;
-    ALUInBE = RegBE;
-    
-    if (ShiftImmediateE)
-      ALUInAE = { 27'b0, InstructionE[10:6] };
-    if (ALUSrcE)
-      ALUInBE = SignExtImmedE;
-  end
-
+  wire [31:0] RegAE;
+  wire [31:0] ALUInAE;
+  wire [31:0] ALUInBE;
   
   wire [31:0] ActualALUOutE;
   
@@ -246,10 +199,45 @@ module MIPS150(
   wire [3:0] DataWriteMaskE;
   wire [31:0] ShiftedDataE;
   
-
+// Originates in this stage, goes to next.
   wire [31:0] AddressE;
   wire [31:0] ALUOutE;
+  wire [31:0] RegBE;
   wire [4:0]  WriteRegE;
+
+// Declare some signals so that the M stage
+// Can talk to the regfile
+
+  wire        reg_we;
+  wire        reg_fwd;
+  wire [4:0]  reg_wa;
+  wire [31:0] reg_wd;
+
+  RegFile Registers(
+    .clk(clk),
+    .we(reg_we),
+    .ra1(InstructionE[25:21]),
+    .ra2(InstructionE[20:16]),
+    .wa(reg_wa),
+    .wd(reg_wd),
+    .rd1(RD1E),
+    .rd2(RD2E)
+  );
+
+  InputSelector isel(
+    .Instruction(InstructionE),
+    .Drs(RD1E),
+    .Drt(RD2E),
+    .SignExtImmed(SignExtImmedE),
+    .ForwardRD(reg_fwd ? reg_wd : 32'b0 ),
+    .ForwardRA(reg_fwd ? reg_wa : 5'b0 ),
+    .ShiftImmediate(ShiftImmediateE),
+    .ALUSrc(ALUSrcE),
+    .RegA(RegAE),
+    .RegB(RegBE),
+    .ALUInA(ALUInAE),
+    .ALUInB(ALUInBE)    
+  );
 
   assign AddressE = RegAE + SignExtImmedE;
 
@@ -326,7 +314,7 @@ module MIPS150(
   assign DMemOutM = dcache_dout;
   
   assign reg_we = RegWriteM;
-  assign reg_fwd = RegWriteM & ~MemToRegM & (WriteRegM != 5'b0);
+  assign reg_fwd = RegWriteM & ~MemToRegM;
   assign reg_wa = WriteRegM;
   assign reg_wd = ResultM;
   
