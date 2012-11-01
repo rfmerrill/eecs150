@@ -189,8 +189,8 @@ module MIPS150(
   wire [4:0] rsE;
   wire [4:0] rtE;
 
-  assign rsE = InstructionE[25:21];
-  assign rtE = InstructionE[20:16];
+  assign rsE = Instruction[25:21];
+  assign rtE = Instruction[20:16];
   
 // The reg_ signals come from the writeback stage
 
@@ -295,7 +295,6 @@ module MIPS150(
   // ******** WRITE STAGE ********
   // ******************************
 
-  reg [31:0] ALUOutM;
   
   assign dcache_addr = (stall ? ALUOutM : AddressE) & 32'h1FFFFFFF;
   
@@ -314,7 +313,7 @@ module MIPS150(
   reg LoadUnsignedM;
   reg [1:0] MemSizeM;
 
-
+  reg [31:0] ALUOutM;
   reg [31:0] WriteDataM;
   reg [4:0]  WriteRegM;
 
