@@ -184,23 +184,6 @@ module MIPS150(
     end    
   end
 
-
- 
-  wire [31:0] RegAE;
-  wire [31:0] ALUInAE;
-  wire [31:0] ALUInBE;
-  
-  wire [31:0] ActualALUOutE;
-  
-  wire [3:0] InstWriteMaskE; 
-  wire [3:0] DataWriteMaskE;
-  wire [31:0] ShiftedDataE;
-  
-  wire [31:0] AddressE;
-  wire [31:0] ALUOutE;
-  wire [31:0] RegBE;
-  wire [4:0]  WriteRegE;
-
 // Declare some signals so that the M stage
 // Can talk to the regfile
 
@@ -213,14 +196,14 @@ module MIPS150(
 // Other RegFile-related signals
   wire [4:0] rs_addr_E;
   wire [4:0] rt_addr_E;
-  wire [4:0] rd_addr_E
+  wire [4:0] rd_addr_E;
   
-  wire [31:0] rs_data_E;
-  wire [31:0] rt_data_E;
-
-
   assign rs_addr_E = InstructionE[25:21];
   assign rt_addr_E = InstructionE[20:16];
+  assign rd_addr_E = InstructionE[15:11];
+
+  wire [31:0] rs_data_E;
+  wire [31:0] rt_data_E;
 
   RegFile Registers(
     .clk(clk),
@@ -233,22 +216,24 @@ module MIPS150(
     .rd2(rt_data_E)
   );
 
-  wire [31:0] RegAE;
-  wire [31:0] ALUInAE;
-  wire [31:0] ALUInBE;
-
   // Handle forwarding. Maybe this violates the control/datapath paradigm
   // but I don't see a non-hairy way to do it otherwise
-
+  wire [31:0] RegAE;
+  wire [31:0] RegBE;
+  
   assign RegAE = (reg_fwd & (reg_wa == rs_addr_E)) ? reg_fwd_wd : rs_data_E;
   assign RegBE = (reg_fwd & (reg_wa == rt_addr_E)) ? reg_fwd_wd : rt_data_E;
   
   // These are distinct from the above because branching
   // doesn't use them.   
+  wire [31:0] ALUInAE;
+  wire [31:0] ALUInBE;
+
   assign ALUInAE = ShiftImmediateE ? { 27'b0, InstructionE[10:6] } : RegAE;
   assign ALUInBE = ALUSrcE ? SignExtImmedE : RegBE;
 
-  assign AddressE = RegAE + SignExtImmedE;
+
+  wire [31:0] ActualALUOutE;
 
   ALU myalu( 
     .A(ALUInAE),
@@ -256,11 +241,11 @@ module MIPS150(
     .ALUop(ALUControlE),
     .Out(ActualALUOutE)
   );
-  
+
+  wire [4:0] BranchWriteRegE;
+
   OutputSelector osel(
     .Branch(BranchE),
-    .RegDst(RegDstE),
-    .ActualALUOut(ActualALUOutE),
     .BranchType(BranchTypeE),
     .Instruction(InstructionE),
     .oldPC(PCE),
@@ -268,12 +253,23 @@ module MIPS150(
     .RegA(RegAE),
     .RegB(RegBE),
     .NextPC(NextPC),
-    .WriteReg(WriteRegE),
-    .ALUOut(ALUOutE)
+    .BranchWriteReg(BranchWriteRegE)
   );
 
+  wire [31:0] ALUOutE;
+  wire [4:0]  WriteRegE;
+  
+  assign ALUOutE = BranchE ? (PCE + 32'd8) : ActualALUOutE;
+  assign WriteRegE = BranchE ? BranchWriteRegE : (RegDstE ? rd_addr_E : rt_addr_E);
+
+  // Bypass ALU and related things for memory stuff, improves timing a bit
+  wire [31:0] AddressE; 
+  assign AddressE = RegAE + SignExtImmedE;
 
   // This happens in stage two because the inst and dmem are synch read.
+  wire [3:0] InstWriteMaskE; 
+  wire [3:0] DataWriteMaskE;
+  wire [31:0] ShiftedDataE; 
 
   MemoryMap mmap(
     .Address(AddressE),
