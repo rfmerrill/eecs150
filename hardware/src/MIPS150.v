@@ -59,8 +59,10 @@ module MIPS150(
     else if (stall)
       PC = PCD;
     else 
-      PC = NextPC;
-      
+      PC = NextPC;      
+  end
+  
+  always @(*) begin      
     if (PC[31:28] == 4'b0100) begin
       // Executing from BIOS
       icache_re = 0;
@@ -267,8 +269,7 @@ module MIPS150(
   assign AddressE = RegAE + SignExtImmedE;
 
   // This happens in stage two because the inst and dmem are synch read.
-  wire [3:0] InstWriteMaskE; 
-  wire [3:0] DataWriteMaskE;
+  wire [3:0]  WriteMaskE;
   wire [31:0] ShiftedDataE; 
 
   MemoryMap mmap(
@@ -277,8 +278,7 @@ module MIPS150(
     .WriteEnable(MemWriteE & ~stall),
     .MemSize(MemSizeE),
     .MemAddr(MemAddr),
-    .InstWriteMask(InstWriteMaskE),
-    .DataWriteMask(DataWriteMaskE),
+    .WriteMask(WriteMaskE),
     .ShiftedData(ShiftedDataE)
   );
 
@@ -310,8 +310,8 @@ module MIPS150(
   
   assign dcache_re = MemToRegE & ((dcache_addr[31:28] == 4'b0001) | (dcache_addr[31:28] == 4'b0011));
 
-  assign dcache_we = DataWriteMaskE;
-  assign icache_we = (PCE[30]) ? InstWriteMaskE : 4'b0000;
+  assign dcache_we = (~AddressE[31] & ~AddressE[30] & AddressE[28] & MemWriteE & ~stall) ? WriteMaskE : 4'b0000;
+  assign icache_we = (~AddressE[31] & ~AddressE[30] & AddressE[29] & MemWriteE & ~stall & ~icache_re) ? WriteMaskE : 4'b0000;
 
   assign dcache_din = ShiftedDataE;
   assign icache_din = ShiftedDataE;
