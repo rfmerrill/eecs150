@@ -17,6 +17,7 @@ module InstructionDecoder  (input [31:0] Instruction,
                             output reg [1:0] MemSize, // 00 = byte, 01 = half, 11 = word
                             output reg [2:0] BranchType, // See Opcode.vh for details about branch types.
                             output reg ZeroExt,
+                            output reg MXC0,
                             output reg Invalid);
 
   wire [5:0] Opcode;
@@ -46,7 +47,14 @@ module InstructionDecoder  (input [31:0] Instruction,
     Invalid = 0;
     ZeroExt = 0;
     
-    if (Opcode == 6'b0) begin // R-type instruction
+    MXC0 = 0;    
+    
+    if (Opcode == `CP0) begin  // coprocessor
+      MXC0 = 1;
+      if (~Instruction[23])
+        RegWrite = 1;
+
+    end else if (Opcode == 6'b0) begin // R-type instruction
       RegDst = 1;
       RegWrite = 1;
       

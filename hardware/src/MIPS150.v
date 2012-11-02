@@ -44,8 +44,6 @@ module MIPS150(
     .doutb(BIOSOutB)
   );
   
-  
-  
   wire [31:0] ISRIn;
   wire ISRWe;
   wire [31:0] ISROut;
@@ -60,6 +58,11 @@ module MIPS150(
     .rd(ISROut)
   );
 
+// Interrupt stuff goes here!
+  wire InterruptRequest;
+  wire InterruptHandled;
+  
+
 
 // Instruction fetch logic (technically part of the decode stage?)
 
@@ -73,6 +76,8 @@ module MIPS150(
       PC = 32'h40000000;
     else if (stall)
       PC = PCD;
+    else if (InterruptHandled)
+      PC = 32'hC0000180;
     else 
       PC = NextPC;      
   end
@@ -120,6 +125,8 @@ module MIPS150(
   wire [2:0] BranchTypeD;
   wire ZeroExtD;
   wire InvalidD;
+ 
+  wire MXC0D;
 
   wire [31:0] SignExtImmedD;
 
@@ -149,8 +156,13 @@ module MIPS150(
     .MemSize(MemSizeD),
     .BranchType(BranchTypeD),
     .ZeroExt(ZeroExtD),
+    .MXC0(MXC0D),
     .Invalid(InvalidD)
   );
+
+
+  // Don't interrupt branches and loads or things get nuts
+  assign InterruptHandled = InterruptRequest & ~(BranchD | MemToRegD);
 
 
   assign SignExtImmedD = (ZeroExtD | ~InstructionD[15]) ? { 16'b0, InstructionD[15:0] } : { 16'hFFFF, InstructionD[15:0] };
@@ -176,6 +188,7 @@ module MIPS150(
   reg [2:0] BranchTypeE;
   reg ZeroExtE;
   reg [31:0] PCE;
+  reg MXC0E;
 
 
   always @(posedge clk) begin
@@ -196,6 +209,7 @@ module MIPS150(
       ZeroExtE <= 0;
       SignExtImmedE <= 32'b0;
       OldMemAddr <= 12'b0;
+      MXC0E <= 0;
     end else if (~stall) begin  
       // Every clock cycle, the pipeline marches along happily~
         
@@ -215,6 +229,7 @@ module MIPS150(
       ZeroExtE <= ZeroExtD;
       SignExtImmedE <= SignExtImmedD;
       OldMemAddr <= MemAddr;
+      MXC0E <= MXC0D;
     end    
   end
 
@@ -249,6 +264,27 @@ module MIPS150(
     .rd1(rs_data_E),
     .rd2(rt_data_E)
   );
+  
+  wire [31:0] CP0OutE;
+  wire UART0Request;
+  wire UART1Request;
+  
+  
+  COP0150 cp0(
+    .Clock(clk),
+    .Enable(1'b1),
+    .Reset(rst),
+    .DataAddress(rd_addr_E),
+    .DataOut(CP0OutE),
+    .DataInEnable(MXC0E & InstructionE[23]),
+    .DataIn(rt_data_E),
+    .InterruptedPC(NextPC),
+    .InterruptHandled(InterruptHandled),
+    .InterruptRequest(InterruptRequest),
+    .UART0Request(UART0Request),
+    .UART1Request(UART1Request)
+  );
+
 
   // Handle forwarding. Maybe this violates the control/datapath paradigm
   // but I don't see a non-hairy way to do it otherwise
@@ -293,8 +329,10 @@ module MIPS150(
   wire [31:0] ALUOutE;
   wire [4:0]  WriteRegE;
   
-  assign ALUOutE = BranchE ? (PCE + 32'd8) : ActualALUOutE;
-  assign WriteRegE = BranchE ? BranchWriteRegE : (RegDstE ? rd_addr_E : rt_addr_E);
+  assign ALUOutE = MXC0E ? CP0OutE:
+                   (BranchE ? (PCE + 32'd8) : ActualALUOutE);
+  assign WriteRegE = BranchE ? BranchWriteRegE :
+                    (RegDstE ? rd_addr_E : rt_addr_E);
 
   // Bypass ALU and related things for memory stuff, improves timing a bit
   wire [31:0] AddressE; 
@@ -409,6 +447,17 @@ module MIPS150(
     .SOut(FPGA_SERIAL_TX)
   );
   
+  reg DataOutWasValid;
+  reg DataInWasReady;
+  
+  always @(posedge clk) begin
+    DataOutWasValid <= DataOutValid;
+    DataInWasReady <= DataInReady;
+  end
+  
+  assign UART0Request = DataOutValid & ~DataOutWasValid;
+  assign UART1Request = DataInReady & ~DataInWasReady;
+  
   UARTInterface ui(
     .clk(clk),
     .rst(rst),
@@ -428,6 +477,7 @@ module MIPS150(
     .WriteData(WriteDataM),
     .ReadEnable(MemToRegM)
   );
+  
 
   reg [15:0] Half;
   reg [7:0] Single;

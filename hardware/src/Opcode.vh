@@ -58,6 +58,9 @@
 `define BGTZ    6'b000111
 `define BLTZ    6'b000001
 
+// mtc/mfc
+`define CP0     6'b010000
+
 // Branch types (used by control)
 // Each bit has a meaning:
 // LSB inverts the condition (for decisions)
