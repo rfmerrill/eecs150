@@ -43,6 +43,22 @@ module MIPS150(
     .addrb(stall ? OldMemAddr : MemAddr),
     .doutb(BIOSOutB)
   );
+  
+  
+  
+  wire [31:0] ISRIn;
+  wire ISRWe;
+  wire [31:0] ISROut;
+  
+  ISRMem isr_mem(
+    .clk(clk),
+    .stall(stall),
+    .we(ISRWe),
+    .wa(MemAddr),
+    .wd(ISRIn),
+    .ra(IMemAddr),
+    .rd(ISROut)
+  );
 
 
 // Instruction fetch logic (technically part of the decode stage?)
@@ -51,7 +67,6 @@ module MIPS150(
   reg [31:0] PCD;
   reg [31:0] PC;
   
-  assign IMemAddr = PC[13:2];
   
   always @(*) begin
     if (rst)
@@ -61,10 +76,19 @@ module MIPS150(
     else 
       PC = NextPC;      
   end
-  
+
+  always @(posedge clk) PCD <= PC;  
+
+  assign IMemAddr = PC[13:2];
+
+
   always @(*) begin      
     if (PC[31:28] == 4'b0100) begin
       // Executing from BIOS
+      icache_re = 0;
+      icache_addr = dcache_addr & 32'h1FFFFFFF;
+    end else if (PC[31:28] == 4'b1100) begin
+      // Executing from ISR
       icache_re = 0;
       icache_addr = dcache_addr & 32'h1FFFFFFF;
     end else begin
@@ -74,7 +98,6 @@ module MIPS150(
     end
   end
   
-  always @(posedge clk) PCD <= PC;
 
 
 
@@ -83,7 +106,7 @@ module MIPS150(
 // ******** DECODE STAGE ********
 // ******************************
 
-  wire [31:0] InstructionD;
+  reg [31:0] InstructionD;
   wire [3:0] ALUControlD;
   wire BranchD;
   wire RegDstD;
@@ -101,7 +124,16 @@ module MIPS150(
   wire [31:0] SignExtImmedD;
 
 
-  assign InstructionD = (PCD[31:28] == 4'b0100) ? BIOSOutA : instruction;
+  //assign InstructionD = (PCD[31:28] == 4'b0100) ? BIOSOutA : instruction;
+
+  always @(*) begin
+    case (PCD[31:28])
+      4'b0100: InstructionD = BIOSOutA;
+      4'b1100: InstructionD = ISROut;
+      default: InstructionD = instruction;
+    endcase
+  end
+
 
   InstructionDecoder decoder(
     .Instruction(InstructionD),
@@ -290,8 +322,6 @@ module MIPS150(
   // ******************************
   // ******** WRITE STAGE ********
   // ******************************
-
-  
   
 
   reg MemWriteM;
@@ -342,6 +372,9 @@ module MIPS150(
 
   assign dcache_we = (~AddressE[31] & ~AddressE[30] & AddressE[28]) ? WriteMaskE : 4'b0000;
   assign icache_we = (~AddressE[31] & ~AddressE[30] & AddressE[29] & ~icache_re) ? WriteMaskE : 4'b0000;
+
+  assign ISRWe = (AddressE[31:28] == 4'b1100);
+  assign ISRIn = WriteDataE;
 
   assign dcache_din = ShiftedDataE;
   assign icache_din = ShiftedDataE;
