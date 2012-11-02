@@ -9,13 +9,10 @@ module MemoryMap (input [31:0] Address,
                   input WriteEnable,
                   input [1:0] MemSize,
                   output [11:0] MemAddr,
-                  output [3:0] InstWriteMask,
-                  output [3:0] DataWriteMask,
+                  output reg [3:0] WriteMask,
                   output reg [31:0] ShiftedData
                   );
 
-  
-  reg [3:0] WriteMask;
   
   assign MemAddr = Address[13:2];
  
@@ -30,9 +27,12 @@ module MemoryMap (input [31:0] Address,
       WriteMask = 4'b1111;
       ShiftedData = WriteData;
     end
+    
+    if (~WriteEnable)
+      WriteMask = 4'b0000;
   end
 
-  assign InstWriteMask = (~Address[31] & ~Address[30] & Address[29] & WriteEnable) ? WriteMask : 4'b0000;
-  assign DataWriteMask = (~Address[31] & ~Address[30] & Address[28] & WriteEnable) ? WriteMask : 4'b0000;
+//  assign InstWriteMask = (~Address[31] & ~Address[30] & Address[29] & WriteEnable) ? WriteMask : 4'b0000;
+//  assign DataWriteMask = (~Address[31] & ~Address[30] & Address[28] & WriteEnable) ? WriteMask : 4'b0000;
 
 endmodule

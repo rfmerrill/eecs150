@@ -310,8 +310,8 @@ module MIPS150(
   
   assign dcache_re = MemToRegE & ((dcache_addr[31:28] == 4'b0001) | (dcache_addr[31:28] == 4'b0011));
 
-  assign dcache_we = (~AddressE[31] & ~AddressE[30] & AddressE[28] & MemWriteE & ~stall) ? WriteMaskE : 4'b0000;
-  assign icache_we = (~AddressE[31] & ~AddressE[30] & AddressE[29] & MemWriteE & ~stall & ~icache_re) ? WriteMaskE : 4'b0000;
+  assign dcache_we = (~AddressE[31] & ~AddressE[30] & AddressE[28]) ? WriteMaskE : 4'b0000;
+  assign icache_we = (~AddressE[31] & ~AddressE[30] & AddressE[29] & ~icache_re) ? WriteMaskE : 4'b0000;
 
   assign dcache_din = ShiftedDataE;
   assign icache_din = ShiftedDataE;
