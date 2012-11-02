@@ -89,12 +89,12 @@ print $modulename . " " . $instancename . "(\n";
 
 my $wire = shift(@wires);
 print ' ' x $indentdepth;
-print "  ." . $wire . "()";
+print "  ." . $wire . "(" . $wire . ")";
 
 while ($wire = shift(@wires)) {
   print ",\n";
   print ' ' x $indentdepth;
-  print "  .". $wire . "()";
+  print "  .". $wire . "(" . $wire . ")";
 }
 
 print "\n";

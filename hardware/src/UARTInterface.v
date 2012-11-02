@@ -10,14 +10,13 @@ module UARTInterface(
   input          DataOutValid,
   output    reg  DataOutReady,
 
-  input   [31:0] FakeResult,
   output reg [31:0] Result,
   
   input   [1:0]  MemSize,
   input          LoadUnsigned,
-  input   [31:0] ALUOut,
+  input   [31:0] Address,
   input          WriteEnable,
-  input          MemToReg,
+  input          ReadEnable,
   input   [31:0] WriteData  
 );
 
@@ -29,13 +28,13 @@ module UARTInterface(
   reg [31:0] InstrCounter;
 
   always @(*) begin
-    Result = FakeResult;
+    Result = 32'b0;
     reading = 0;
     writing = 0;
     resetcounters = 0;
     
-    if (~WriteEnable & MemToReg) begin
-      case (ALUOut)
+    if (~WriteEnable & ReadEnable) begin
+      case (Address)
         32'h80000000: Result = { 31'b0, DataInReady };
         32'h80000004: Result = { 31'b0, DataOutValid };
         32'h8000000c: begin
@@ -51,9 +50,9 @@ module UARTInterface(
       endcase
     end 
       
-    if (WriteEnable & (ALUOut == 32'h80000008)) 
+    if (WriteEnable & (Address == 32'h80000008)) 
       writing = 1;
-    if (WriteEnable & (ALUOut == 32'h80000018))
+    if (WriteEnable & (Address == 32'h80000018))
       resetcounters = 1;
   end
 

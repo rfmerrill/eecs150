@@ -267,6 +267,9 @@ module MIPS150(
   // Bypass ALU and related things for memory stuff, improves timing a bit
   wire [31:0] AddressE; 
   assign AddressE = RegAE + SignExtImmedE;
+  
+  wire [31:0] WriteDataE;
+  assign WriteDataE = RegBE;
 
   // This happens in stage two because the inst and dmem are synch read.
   wire [3:0]  WriteMaskE;
@@ -300,33 +303,15 @@ module MIPS150(
   reg [31:0] ALUOutM;
   reg [31:0] WriteDataM;
   reg [4:0]  WriteRegM;
+  
+  reg [31:0] AddressM;
 
   wire [31:0] DMemOutM;
   
-  wire [31:0] ResultM;
-  wire [31:0] FakeResultM;
+  wire [31:0] IOResultM;
+  reg [31:0] ResultM;
 
-  assign dcache_addr = (stall ? ALUOutM : AddressE) & 32'h1FFFFFFF;
-  
-  assign dcache_re = MemToRegE & ((dcache_addr[31:28] == 4'b0001) | (dcache_addr[31:28] == 4'b0011));
-
-  assign dcache_we = (~AddressE[31] & ~AddressE[30] & AddressE[28]) ? WriteMaskE : 4'b0000;
-  assign icache_we = (~AddressE[31] & ~AddressE[30] & AddressE[29] & ~icache_re) ? WriteMaskE : 4'b0000;
-
-  assign dcache_din = ShiftedDataE;
-  assign icache_din = ShiftedDataE;
-
-
-
-  assign DMemOutM = dcache_dout;
-  
-  assign reg_we = RegWriteM;
-  assign reg_fwd = RegWriteM & ~MemToRegM;
-  assign reg_wa = WriteRegM;
-  assign reg_wd = ResultM;
-  assign reg_fwd_wd = ALUOutM;
-  
-  
+ 
   always @(posedge clk) begin
     if (rst) begin
       MemWriteM <= 0;
@@ -335,6 +320,7 @@ module MIPS150(
       LoadUnsignedM <= 0;
       MemSizeM <= 2'b0;
       ALUOutM <= 32'b0;
+      AddressM <= 32'b0;
       WriteDataM <= 32'b0;
       WriteRegM <= 0;
     end else if (~stall) begin  
@@ -344,21 +330,28 @@ module MIPS150(
       LoadUnsignedM <= LoadUnsignedE;
       MemSizeM <= MemSizeE;
       ALUOutM <= ALUOutE;
-      WriteDataM <= RegBE;
+      AddressM <= AddressE;
+      WriteDataM <= WriteDataE;
       WriteRegM <= WriteRegE;
     end    
   end
   
+  assign dcache_addr = (stall ? AddressM : AddressE) & 32'h1FFFFFFF;
   
-  MemoryUnMap munmap(
-    .MemToReg(MemToRegM),
-    .MemOut((ALUOutM[31:28] == 4'b0100) ? BIOSOutB : DMemOutM),
-    .MemSize(MemSizeM),
-    .LoadUnsigned(LoadUnsignedM),
-    .ALUOut(ALUOutM),
-    .Result(FakeResultM)
-  );
+  assign dcache_re = MemToRegE & ((dcache_addr[31:28] == 4'b0001) | (dcache_addr[31:28] == 4'b0011));
+
+  assign dcache_we = (~AddressE[31] & ~AddressE[30] & AddressE[28]) ? WriteMaskE : 4'b0000;
+  assign icache_we = (~AddressE[31] & ~AddressE[30] & AddressE[29] & ~icache_re) ? WriteMaskE : 4'b0000;
+
+  assign dcache_din = ShiftedDataE;
+  assign icache_din = ShiftedDataE;
+
   
+  assign reg_we = RegWriteM;
+  assign reg_fwd = RegWriteM & ~MemToRegM;
+  assign reg_wa = WriteRegM;
+  assign reg_wd = ResultM;
+  assign reg_fwd_wd = ALUOutM;
 
 
   wire DataInValid;
@@ -393,16 +386,42 @@ module MIPS150(
     .DataOut(DataOut),
     .DataOutValid(DataOutValid),
     .DataOutReady(DataOutReady),
-    .FakeResult(FakeResultM),
-    .Result(ResultM),
+    
+    .Result(IOResultM),
     .LoadUnsigned(LoadUnsignedM),
     .MemSize(MemSizeM),
-    .ALUOut(stall ? 32'b0 : ALUOutM),
+    .Address(stall ? 32'b0 : AddressM),
     .WriteEnable(MemWriteM & ~stall),
     .WriteData(WriteDataM),
-    .MemToReg(MemToRegM)
+    .ReadEnable(MemToRegM)
   );
 
+  reg [15:0] Half;
+  reg [7:0] Single;
+  reg [31:0] MemOut;
+   
+  always @(*) begin 
+    if (MemToRegM)
+      if (AddressM[31:28] == 4'b1000) // IO
+        ResultM = IOResultM;
+      else begin
+        if (AddressM[31:28] == 4'b0100) // BIOS 
+          MemOut = BIOSOutB;
+        else
+          MemOut = dcache_dout;
+  
+        Half = ~AddressM[1] ? MemOut[31:16] : MemOut[15:0];
+        Single = ~AddressM[0] ? Half[15:8] : Half[7:0];
+     
+        case (MemSizeM)
+          2'b00: ResultM = (LoadUnsignedM | ~Single[7]) ? { 24'b0, Single } : { 24'hFFFFFF, Single };
+          2'b01: ResultM = (LoadUnsignedM | ~Half[15]) ? { 16'b0, Half } : { 16'hFFFF, Half };
+          2'b11: ResultM = MemOut;
+        endcase
+      end
+    else
+      ResultM = ALUOutM;
+  end
 
 
 
