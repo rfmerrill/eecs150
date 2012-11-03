@@ -279,7 +279,7 @@ module MIPS150(
     .DataInEnable(MXC0E & InstructionE[23]),
     .DataIn(rt_data_E),
     .InterruptedPC(NextPC),
-    .InterruptHandled(InterruptHandled),
+    .InterruptHandled(InterruptHandled & ~stall),
     .InterruptRequest(InterruptRequest),
     .UART0Request(UART0Request),
     .UART1Request(UART1Request)
