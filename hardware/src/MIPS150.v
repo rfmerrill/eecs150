@@ -270,22 +270,6 @@ module MIPS150(
   wire UART1Request;
   
   
-  COP0150 cp0(
-    .Clock(clk),
-    .Enable(1'b1),
-    .Reset(rst),
-    .DataAddress(rd_addr_E),
-    .DataOut(CP0OutE),
-    .DataInEnable(MXC0E & InstructionE[23]),
-    .DataIn(rt_data_E),
-    .InterruptedPC(NextPC),
-    .InterruptHandled(InterruptHandled & ~stall),
-    .InterruptRequest(InterruptRequest),
-    .UART0Request(UART0Request),
-    .UART1Request(UART1Request)
-  );
-
-
   // Handle forwarding. Maybe this violates the control/datapath paradigm
   // but I don't see a non-hairy way to do it otherwise
   wire [31:0] RegAE;
@@ -293,6 +277,22 @@ module MIPS150(
   
   assign RegAE = (reg_fwd & (reg_wa == rs_addr_E)) ? reg_fwd_wd : rs_data_E;
   assign RegBE = (reg_fwd & (reg_wa == rt_addr_E)) ? reg_fwd_wd : rt_data_E;
+
+  COP0150 cp0(
+    .Clock(clk),
+    .Enable(1'b1),
+    .Reset(rst),
+    .DataAddress(rd_addr_E),
+    .DataOut(CP0OutE),
+    .DataInEnable(MXC0E & InstructionE[23]),
+    .DataIn(RegBE),
+    .InterruptedPC(NextPC),
+    .InterruptHandled(InterruptHandled & ~stall),
+    .InterruptRequest(InterruptRequest),
+    .UART0Request(UART0Request),
+    .UART1Request(UART1Request)
+  );
+
   
   // These are distinct from the above because branching
   // doesn't use them.   
