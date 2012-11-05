@@ -70,6 +70,7 @@ module MIPS150(
   reg [31:0] PCD;
   reg [31:0] PC;
   
+  wire [31:0] fake_dcache_addr;
   
   always @(*) begin
     if (rst)
@@ -91,15 +92,15 @@ module MIPS150(
     if (PC[31:28] == 4'b0100) begin
       // Executing from BIOS
       icache_re = 0;
-      icache_addr = dcache_addr & 32'h1FFFFFFF;
+      icache_addr = fake_dcache_addr & 32'h0FFFFFFF;
     end else if (PC[31:28] == 4'b1100) begin
       // Executing from ISR
       icache_re = 0;
-      icache_addr = dcache_addr & 32'h1FFFFFFF;
+      icache_addr = fake_dcache_addr & 32'h0FFFFFFF;
     end else begin
       // Executing from instruction cache
       icache_re = 1;
-      icache_addr = PC & 32'h1FFFFFFF;
+      icache_addr = PC & 32'h0FFFFFFF;
     end
   end
   
@@ -404,9 +405,12 @@ module MIPS150(
     end    
   end
   
-  assign dcache_addr = (stall ? AddressM : AddressE) & 32'h1FFFFFFF;
+
   
-  assign dcache_re = MemToRegE & ((dcache_addr[31:28] == 4'b0001) | (dcache_addr[31:28] == 4'b0011));
+  assign fake_dcache_addr = (stall ? AddressM : AddressE) & 32'h1FFFFFFF;
+  assign dcache_addr = fake_dcache_addr & 32'h0FFFFFFF;
+  
+  assign dcache_re = MemToRegE & (fake_dcache_addr[28]);
 
   assign dcache_we = (~AddressE[31] & ~AddressE[30] & AddressE[28]) ? WriteMaskE : 4'b0000;
   assign icache_we = (~AddressE[31] & ~AddressE[30] & AddressE[29] & ~icache_re) ? WriteMaskE : 4'b0000;
