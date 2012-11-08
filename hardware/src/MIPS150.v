@@ -17,7 +17,12 @@ module MIPS150(
     output [31:0] icache_din,
     input [31:0] dcache_dout,
     input [31:0] instruction,
-    input stall
+    input stall,
+
+    output [31:0] gp_code,
+    output [31:0] gp_frame,
+    output gp_valid,
+    input frame_interrupt
 );
 
 // Use this as the top-level module for your CPU. You
