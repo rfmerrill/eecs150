@@ -171,9 +171,6 @@ module ml505top
   wire         line_x1_valid;
   wire         line_y1_valid;
   wire         line_trigger;
-  wire [31:0]  bypass_addr;
-  wire [31:0]  bypass_din;
-  wire [3:0]   bypass_we;
   
   wire fb0;
    wire frame_interrupt;
@@ -216,9 +213,6 @@ module ml505top
       .icache_din (icache_din ), 
       .dcache_dout(dcache_dout),
       .icache_dout(instruction),
-      .bypass_addr(bypass_addr),
-      .bypass_we  (bypass_we  ),
-      .bypass_din (bypass_din ),
       .stall      (stall      ),
       .video      (video      ),
       .video_ready(video_ready),
@@ -246,9 +240,6 @@ module ml505top
     .icache_din  (icache_din  ),
     .dcache_dout (dcache_dout ),
     .instruction (instruction ),
-    .bypass_addr(bypass_addr),
-    .bypass_din(bypass_din),
-    .bypass_we(bypass_we),
     .gp_code(cpu_gp_code),
     .gp_frame(cpu_gp_frame),
     .gp_valid(cpu_gp_valid),

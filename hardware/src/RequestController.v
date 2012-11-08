@@ -302,7 +302,7 @@ module RequestController(
             wdf_mask_din = 16'hFFFF; // not writing
             wdf_wr_en    = 1'b0; //not writing
         end
-        else if((filler_af_wr_en || filler_wdf_wr_en) && !line_reserved && !bypass_reserved) begin
+        else if((filler_af_wr_en || filler_wdf_wr_en) && !line_reserved && !bypass_reserved && !cmd_reserved) begin
             fifo_access  = FILLER_ACCESS;
             // write-only path
             af_cmd_din   = 3'b000;
@@ -312,7 +312,7 @@ module RequestController(
             wdf_mask_din = filler_wdf_mask_din;
             wdf_wr_en    = filler_wdf_wr_en && !wdf_full && !af_full;
         end
-        else if((line_af_wr_en || line_wdf_wr_en) && !filler_reserved && !bypass_reserved) begin
+        else if((line_af_wr_en || line_wdf_wr_en) && !filler_reserved && !bypass_reserved && !cmd_reserved) begin
             fifo_access  = LINE_ACCESS;
             // write-only path
             af_cmd_din   = 3'b000;
@@ -322,7 +322,7 @@ module RequestController(
             wdf_mask_din = line_wdf_mask_din;
             wdf_wr_en    = line_wdf_wr_en && !wdf_full && !af_full;
         end
-        else if((bypass_af_wr_en || bypass_wdf_wr_en) && !filler_reserved && !line_reserved) begin
+        else if((bypass_af_wr_en || bypass_wdf_wr_en) && !filler_reserved && !line_reserved && !cmd_reserved) begin
             fifo_access  = BYPASS_ACCESS;
             // write-only path
             af_cmd_din   = 3'b000;
