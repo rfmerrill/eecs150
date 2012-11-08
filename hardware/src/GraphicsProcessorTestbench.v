@@ -11,10 +11,7 @@ module GraphicsProcessorTestbench();
     initial Clock = 0;
     always #(HalfCycle) Clock <= ~Clock;
     
-    reg trigger0;
-    reg trigger1;
-    reg count0;
-    reg count1;
+
     reg rdf_valid;
     reg af_full;
     reg [127:0] rdf_dout;
@@ -22,7 +19,6 @@ module GraphicsProcessorTestbench();
     wire af_wr_en;
     wire [30:0] af_addr_din;
     wire ready;
-    wire fb0;
     
     reg FF_ready;
     wire FF_valid;
@@ -79,32 +75,7 @@ module GraphicsProcessorTestbench();
     						
 						);
     initial begin
-    	#(Cycle);
-    	Reset = 1'b1;
-    	gp_valid = 1'b0;
-    	af_full = 1'b1;
-    	#(Cycle);
-    	Reset = 1'b0;
-    	#(Cycle);
-    	
-    	gp_valid = 1'b1;
-    	#(Cycle);
-    	gp_valid = 1'b0;
-    	af_full = 1'b0;
-    	#(5*Cycle);
-    	rdf_valid = 1'b1;
-    	#(Cycle);
-    	rdf_valid = 1'b0;
-    	#(5*Cycle);
-    	rdf_valid=1'b1;
-    	rdf_dout[31:0]={8'h01,24'hffffff};
-    	#(Cycle);
-	  	FF_ready=1'b1;
-    	#(5*Cycle);
-		#(5*Cycle);
-    	FF_ready=1'b1;
-    	
-    	
+    	//TODO put your code here
     	$finish();
     end
 
