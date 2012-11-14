@@ -20,6 +20,10 @@
 //   - Write-only path from the line engine to DDR2
 //   - Write-only path from the color filler to the DDR2
 //   - Read-only path from DDR2 to a module that feeds DVI with pixels.
+//
+// v3 changes: (Ian Juch)
+// To support graphics command processor:
+// 	 - Read only path to access the instructions from DDR2
 //-----------------------------------------------------------------------------
 
 module RequestController( 
@@ -66,6 +70,7 @@ module RequestController(
                        input [127:0]    bypass_wdf_din,
                        input [15:0]     bypass_wdf_mask_din,
                        input            bypass_wdf_wr_en,
+                       
                        // inputs from the color filler
                        // similarly only needs to write
                        input [30:0]     filler_addr_din,
@@ -73,6 +78,12 @@ module RequestController(
                        input [127:0]    filler_wdf_din,
                        input [15:0]     filler_wdf_mask_din,
                        input            filler_wdf_wr_en,
+                       
+                       // inputs from the graphics command processor
+                       // read only
+                       input            cmd_rdf_rd_en,
+                       input            cmd_af_wr_en,
+                       input [30:0]     cmd_addr_din,
 
                        // inputs from the module responsibile for keeping the 
                        // pixel fifo full, designated with 'pixel'. This only allows
@@ -114,7 +125,11 @@ module RequestController(
 
                        // outputs to the fifo-filling module:
                        output             pixel_rdf_valid,
-                       output             pixel_af_full
+                       output             pixel_af_full,
+                       
+                       // outputs to graphics command processor
+                       output 			cmd_rdf_valid,
+                       output 			cmd_af_full
                        );
    
 
@@ -126,6 +141,7 @@ module RequestController(
     localparam LINE_ACCESS   = 3'b100;
     localparam PIXEL_ACCESS  = 3'b101;
     localparam BYPASS_ACCESS = 3'b110;
+    localparam CMD_ACCESS 	 = 3'b111;
 
     // New approach: icache and dcache don't stream reads. Keep
     // a count of each read and then remember the number for
@@ -196,12 +212,13 @@ module RequestController(
 
     assign rdf_rd_en = i_read ? i_rdf_rd_en :
                        d_read ? d_rdf_rd_en :
-                       pixel_rdf_rd_en;
+                       (pixel_rdf_rd_en | cmd_rdf_rd_en);
 
     // directing the data is now straightforward: we give it to current_reader
     assign i_rdf_valid =  i_read ? rdf_valid : 1'b0;
     assign d_rdf_valid =  d_read ? rdf_valid : 1'b0;
-    assign pixel_rdf_valid = (i_read || d_read) ? 1'b0 : rdf_valid;
+    assign pixel_rdf_valid = (i_read || d_read)&&(fifo_access==PIXEL_ACCESS) ? 1'b0 : rdf_valid;
+    assign cmd_rdf_valid = (i_read || d_read)&&(fifo_access==CMD_ACCESS) ? 1'b0 : rdf_valid;
 
 
     //**************************************************************************
@@ -217,8 +234,9 @@ module RequestController(
     reg line_reserved;
     reg filler_reserved;
     reg bypass_reserved;
+    reg cmd_reserved;
     wire reserved;
-    assign reserved = filler_reserved || line_reserved || bypass_reserved;
+    assign reserved = filler_reserved || line_reserved || bypass_reserved || cmd_reserved;
 
     always @(posedge clk) begin
         if(rst) 
@@ -235,6 +253,11 @@ module RequestController(
             filler_reserved <= 1'b0;
         else if(fifo_access == FILLER_ACCESS && !wdf_full && !af_full)
             filler_reserved <= filler_reserved + 1'b1;
+            
+        if(rst)
+            cmd_reserved <= 1'b0;
+        else if(fifo_access == CMD_ACCESS && !wdf_full && !af_full)
+            cmd_reserved <= cmd_reserved + 1'b1;
     end
 
     always @(*) begin
@@ -269,7 +292,17 @@ module RequestController(
             wdf_mask_din = 16'hFFFF; // not writing
             wdf_wr_en    = 1'b0; //not writing
         end
-        else if((filler_af_wr_en || filler_wdf_wr_en) && !line_reserved && !bypass_reserved) begin
+        else if((cmd_af_wr_en) && !filler_reserved && !line_reserved && !bypass_reserved) begin
+            fifo_access  = CMD_ACCESS;
+            // read-only path
+            af_cmd_din   = 3'b001;
+            addr_din     = cmd_addr_din;
+            af_wr_en     = cmd_af_wr_en && !af_full && !wdf_full;
+            wdf_din      = 128'bx; // doesn't matter
+            wdf_mask_din = 16'hFFFF; // not writing
+            wdf_wr_en    = 1'b0; //not writing
+        end
+        else if((filler_af_wr_en || filler_wdf_wr_en) && !line_reserved && !bypass_reserved && !cmd_reserved) begin
             fifo_access  = FILLER_ACCESS;
             // write-only path
             af_cmd_din   = 3'b000;
@@ -279,7 +312,7 @@ module RequestController(
             wdf_mask_din = filler_wdf_mask_din;
             wdf_wr_en    = filler_wdf_wr_en && !wdf_full && !af_full;
         end
-        else if((line_af_wr_en || line_wdf_wr_en) && !filler_reserved && !bypass_reserved) begin
+        else if((line_af_wr_en || line_wdf_wr_en) && !filler_reserved && !bypass_reserved && !cmd_reserved) begin
             fifo_access  = LINE_ACCESS;
             // write-only path
             af_cmd_din   = 3'b000;
@@ -289,7 +322,7 @@ module RequestController(
             wdf_mask_din = line_wdf_mask_din;
             wdf_wr_en    = line_wdf_wr_en && !wdf_full && !af_full;
         end
-        else if((bypass_af_wr_en || bypass_wdf_wr_en) && !filler_reserved && !line_reserved) begin
+        else if((bypass_af_wr_en || bypass_wdf_wr_en) && !filler_reserved && !line_reserved && !cmd_reserved) begin
             fifo_access  = BYPASS_ACCESS;
             // write-only path
             af_cmd_din   = 3'b000;
@@ -335,6 +368,8 @@ module RequestController(
     assign bypass_wdf_full = fifo_access == BYPASS_ACCESS  ? wdf_full || af_full : 1'b1;
 
     assign pixel_af_full  = fifo_access == PIXEL_ACCESS  ? af_full || wdf_full : 1'b1;
+    
+    assign cmd_af_full  = fifo_access == CMD_ACCESS  ? af_full || wdf_full : 1'b1;
 
 endmodule
 

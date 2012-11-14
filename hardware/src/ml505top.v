@@ -21,7 +21,18 @@ module ml505top
   inout  [7:0]  DDR2_DQS_P,
   output        DDR2_ODT,
   output        DDR2_RAS_B,
-  output        DDR2_WE_B
+  output        DDR2_WE_B,
+    
+  output [11:0] DVI_D,
+  output        DVI_DE,
+  output        DVI_H,
+  output        DVI_RESET_B,
+  output        DVI_V,
+  output        DVI_XCLK_N,
+  output        DVI_XCLK_P,
+  
+  inout         IIC_SCL_VIDEO,
+  inout         IIC_SDA_VIDEO
 );
 
   reg [3:0]  reset_r = 4'b0;
@@ -144,44 +155,74 @@ module ml505top
   wire [31:0]  dcache_dout;
   wire [31:0]  instruction;
   wire         stall;
-
+  wire         video_ready;
+  wire         dvi_video_ready;
+  wire         video_valid;
+  wire [23:0]  video;
+  wire [23:0]  filler_color;
+  wire         filler_ready;
+  wire         filler_valid;
+  wire         line_ready;
+  wire  [31:0] line_color;
+  wire  [9:0]  line_point;
+  wire         line_color_valid;
+  wire         line_x0_valid;
+  wire         line_y0_valid;
+  wire         line_x1_valid;
+  wire         line_y1_valid;
+  wire         line_trigger;
+  
+  wire fb0;
+   wire frame_interrupt;
+   wire [31:0] gp_code;
+   wire [31:0] gp_frame;
+   wire        gp_valid;
+   
+  
   Memory150 #(.SIM_ONLY(1'b0)) mem_arch(
-    .cpu_clk_g(cpu_clk_g),
-    .clk0_g(clk0_g),
-    .clk200_g(clk200_g),
-    .clkdiv0_g(clkdiv0_g),
-    .clk90_g(clk90_g),
-    .rst(fifo_reset),
-    .init_done(init_done),
-    .DDR2_A(DDR2_A),
-    .DDR2_BA(DDR2_BA),
-    .DDR2_CAS_B(DDR2_CAS_B),
-    .DDR2_CKE(DDR2_CKE),
-    .DDR2_CLK_N(DDR2_CLK_N),
-    .DDR2_CLK_P(DDR2_CLK_P),
-    .DDR2_CS_B(DDR2_CS_B),
-    .DDR2_D(DDR2_D),
-    .DDR2_DM(DDR2_DM),
-    .DDR2_DQS_N(DDR2_DQS_N),
-    .DDR2_DQS_P(DDR2_DQS_P),
-    .DDR2_ODT(DDR2_ODT),
-    .DDR2_RAS_B(DDR2_RAS_B),
-    .DDR2_WE_B(DDR2_WE_B),
-    .locked(pll_lock),
-    .dcache_addr(dcache_addr),
-    .icache_addr(icache_addr),
-    .dcache_we  (dcache_we  ),
-    .icache_we  (icache_we  ),
-    .dcache_re  (dcache_re  ),
-    .icache_re  (icache_re  ),
-    .dcache_din (dcache_din ),
-    .icache_din (icache_din ),
-    .dcache_dout(dcache_dout),
-    .instruction(instruction),
-    .stall      (stall      )
-  );
-
-
+      .cpu_clk_g(cpu_clk_g),
+      .clk0_g(clk0_g),
+      .clk200_g(clk200_g),
+      .clkdiv0_g(clkdiv0_g),
+      .clk90_g(clk90_g),
+      .clk50_g(clk50_g),
+      .rst(fifo_reset),
+      .init_done(init_done),
+      .DDR2_A(DDR2_A),
+      .DDR2_BA(DDR2_BA),
+      .DDR2_CAS_B(DDR2_CAS_B),
+      .DDR2_CKE(DDR2_CKE),
+      .DDR2_CLK_N(DDR2_CLK_N),
+      .DDR2_CLK_P(DDR2_CLK_P),
+      .DDR2_CS_B(DDR2_CS_B),
+      .DDR2_D(DDR2_D),
+      .DDR2_DM(DDR2_DM),
+      .DDR2_DQS_N(DDR2_DQS_N),
+      .DDR2_DQS_P(DDR2_DQS_P),
+      .DDR2_ODT(DDR2_ODT),
+      .DDR2_RAS_B(DDR2_RAS_B),
+      .DDR2_WE_B(DDR2_WE_B),
+      .locked(pll_lock),
+      .dcache_addr(dcache_addr),     
+      .icache_addr(icache_addr),         
+      .dcache_we  (dcache_we  ),  
+      .icache_we  (icache_we  ),  
+      .dcache_re  (dcache_re  ),  
+      .icache_re  (icache_re  ),  
+      .dcache_din (dcache_din ), 
+      .icache_din (icache_din ), 
+      .dcache_dout(dcache_dout),
+      .icache_dout(instruction),
+      .stall      (stall      ),
+      .video      (video      ),
+      .video_ready(video_ready),
+      .video_valid(video_valid),
+      .cpu_gp_code(gp_code),
+      .cpu_gp_frame(gp_frame),
+      .cpu_gp_valid(gp_valid),
+      .frame_interrupt(frame_interrupt)
+    );
+  
   // MIPS 150 CPU
   MIPS150 CPU(
     .clk(cpu_clk_g),
@@ -198,7 +239,39 @@ module ml505top
     .dcache_din  (dcache_din  ),
     .icache_din  (icache_din  ),
     .dcache_dout (dcache_dout ),
-    .instruction (instruction )
+    .instruction (instruction ),
+    .gp_code(cpu_gp_code),
+    .gp_frame(cpu_gp_frame),
+    .gp_valid(cpu_gp_valid),
+    .frame_interrupt(frame_interrupt)
+  ); //add GP_CODE, GP_FRAME, and GP_valid io here and pixel feeder interrupt
+
+  DVI #(
+    .ClockFreq(                 50000000),
+    .Width(                     1040),   
+    .FrontH(                    56),     
+    .PulseH(                    120),    
+    .BackH(                     64),    
+    .Height(                    666),    
+    .FrontV(                    37),      
+    .PulseV(                    6),      
+    .BackV(                     23)      
+  ) dvi(         
+    .Clock(                     cpu_clk_g),
+    .Reset(                     rst || ~init_done),
+    .DVI_D(                     DVI_D),
+    .DVI_DE(                    DVI_DE),
+    .DVI_H(                     DVI_H),
+    .DVI_V(                     DVI_V),
+    .DVI_RESET_B(               DVI_RESET_B),
+    .DVI_XCLK_N(                DVI_XCLK_N),
+    .DVI_XCLK_P(                DVI_XCLK_P),
+    .I2C_SCL_DVI(               IIC_SCL_VIDEO),
+    .I2C_SDA_DVI(               IIC_SDA_VIDEO),
+    /* Ready/Valid interface for 24-bit pixel values */
+    .Video(                     video),
+    .VideoReady(                video_ready),
+    .VideoValid(                video_valid)
   );
 
   assign GPIO_LED = {5'b0, stall, pll_lock, init_done};
