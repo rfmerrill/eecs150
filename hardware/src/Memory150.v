@@ -63,7 +63,9 @@ module Memory150(
 	       input [31:0] cpu_gp_code,
                input [31:0] cpu_gp_frame,
 	       input cpu_gp_valid,
-	       output frame_interrupt
+	       output frame_interrupt,
+	       input  [31:0] frame_addr,
+	       input  frame_valid
              );
 
     parameter SIM_ONLY = 1'b0;
@@ -364,7 +366,9 @@ module Memory150(
         .video(video),
         .video_valid(video_valid),
         .video_ready(video_ready),
-        .frame_interrupt(frame_interrupt));
+        .frame_interrupt(frame_interrupt),
+        .frame_addr(frame_addr),
+        .frame_valid(frame_valid));
 
     FrameFiller framefill(
         .clk(cpu_clk_g),

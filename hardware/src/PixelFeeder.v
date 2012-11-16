@@ -15,8 +15,10 @@ module PixelFeeder( //System:
                     output [23:0]  video,
                     output         video_valid,
                     input          video_ready,
-
-		    output frame_interrupt);
+                    // CPU:
+                    input  [31:0]  frame_addr,
+                    input  frame_valid,
+            		    output frame_interrupt);
 
     // Hint: States
     localparam IDLE = 1'b0;

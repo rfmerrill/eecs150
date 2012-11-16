@@ -178,6 +178,9 @@ module ml505top
    wire [31:0] gp_frame;
    wire        gp_valid;
    
+   wire [31:0] frame_addr;
+   wire frame_valid;
+   
   
   Memory150 #(.SIM_ONLY(1'b0)) mem_arch(
       .cpu_clk_g(cpu_clk_g),
@@ -220,7 +223,9 @@ module ml505top
       .cpu_gp_code(gp_code),
       .cpu_gp_frame(gp_frame),
       .cpu_gp_valid(gp_valid),
-      .frame_interrupt(frame_interrupt)
+      .frame_interrupt(frame_interrupt),
+      .frame_addr(frame_addr),
+      .frame_valid(frame_valid)
     );
   
   // MIPS 150 CPU
@@ -243,7 +248,9 @@ module ml505top
     .gp_code(cpu_gp_code),
     .gp_frame(cpu_gp_frame),
     .gp_valid(cpu_gp_valid),
-    .frame_interrupt(frame_interrupt)
+    .frame_interrupt(frame_interrupt),
+    .frame_addr(frame_addr),
+    .frame_valid(frame_valid)
   ); //add GP_CODE, GP_FRAME, and GP_valid io here and pixel feeder interrupt
 
   DVI #(

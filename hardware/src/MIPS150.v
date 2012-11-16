@@ -22,7 +22,9 @@ module MIPS150(
     output [31:0] gp_code,
     output [31:0] gp_frame,
     output gp_valid,
-    input frame_interrupt
+    input frame_interrupt,
+    output [31:0] frame_addr,
+    output frame_valid
 );
 
   // BIOS memory.
