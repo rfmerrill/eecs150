@@ -432,7 +432,7 @@ module Memory150(
       .rdf_dout(rdf_dout),
       .rdf_rd_en(cmd_rdf_rd_en),
       .af_wr_en(cmd_af_wr_en),
-      .af_addr_din(cmd_ad_addr_in),
+      .af_addr_din(cmd_addr_din),
       //CPU IO
       .GP_CODE(cpu_gp_code),
       .GP_FRAME(cpu_gp_frame),
