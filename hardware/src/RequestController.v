@@ -247,8 +247,8 @@ module RequestController(
         if(rst)
             bypass_reserved <= 1'b0;
         else if(fifo_access == BYPASS_ACCESS && !wdf_full && !af_full)
-            bypass_reserved <= bypass_reserved + 1'b1;
-
+          bypass_reserved <= 1'b0;
+       
         if(rst)
             filler_reserved <= 1'b0;
         else if(fifo_access == FILLER_ACCESS && !wdf_full && !af_full)
