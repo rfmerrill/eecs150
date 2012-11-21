@@ -222,7 +222,7 @@ module RequestController(
 
  
     // this can go straight through, only logic req'd is for directing the data
-    wire i_read, d_read, pixel_read;
+    wire i_read, d_read, cmd_read;
     assign i_read = icache_req_valid != 2'b00 && icache_req_num == serviced_reads[11:1];
     assign d_read = dcache_req_valid != 2'b00 && dcache_req_num == serviced_reads[11:1];
     assign cmd_read = cmd_req_valid != 2'b00 && cmd_req_num == serviced_reads[11:1];
