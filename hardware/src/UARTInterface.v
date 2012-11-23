@@ -17,12 +17,15 @@ module UARTInterface(
   input   [31:0] Address,
   input          WriteEnable,
   input          ReadEnable,
-  input   [31:0] WriteData  
+  input   [31:0] WriteData,
+  output  reg [31:0] frame_addr,
+  output  reg        frame_valid
 );
 
   reg reading;
   reg writing;
   reg resetcounters;
+  reg frame_writing;
   
   reg [31:0] CycleCounter;
   reg [31:0] InstrCounter;
@@ -31,6 +34,7 @@ module UARTInterface(
     Result = 32'b0;
     reading = 0;
     writing = 0;
+    frame_writing = 0;
     resetcounters = 0;
     
     if (~WriteEnable & ReadEnable) begin
@@ -54,6 +58,9 @@ module UARTInterface(
       writing = 1;
     if (WriteEnable & (Address == 32'h80000018))
       resetcounters = 1;
+    if (WriteEnable & (Address == 32'h80000020))
+      frame_writing = 1;
+      
   end
 
   always @(posedge clk) begin
@@ -63,6 +70,7 @@ module UARTInterface(
       DataInValid <= 0;
       CycleCounter <= 32'b0;
       InstrCounter <= 32'b0;
+      frame_addr <= 32'b0;
     end else begin
       if (resetcounters) begin
         CycleCounter <= 32'b0;
@@ -83,7 +91,14 @@ module UARTInterface(
         DataInValid <= 1;
       end else begin
         DataInValid <= 0;
-      end    
+      end
+      
+      if (frame_writing) begin
+        frame_addr <= WriteData;
+        frame_valid <= 1;
+      end else begin
+        frame_valid <= 0;
+      end
     end  
   end
 endmodule

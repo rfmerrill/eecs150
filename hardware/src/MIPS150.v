@@ -27,6 +27,11 @@ module MIPS150(
     output frame_valid
 );
 
+//  assign frame_addr = 32'b0;
+//  assign frame_valid = 1'b0;
+  
+  
+
   // BIOS memory.
 
   wire [11:0] IMemAddr;
@@ -298,7 +303,8 @@ module MIPS150(
     .InterruptHandled(InterruptHandled & ~stall),
     .InterruptRequest(InterruptRequest),
     .UART0Request(UART0Request),
-    .UART1Request(UART1Request)
+    .UART1Request(UART1Request),
+    .frame_interrupt(frame_interrupt)
   );
 
   
@@ -486,7 +492,9 @@ module MIPS150(
     .Address(stall ? 32'b0 : AddressM),
     .WriteEnable(MemWriteM & ~stall),
     .WriteData(WriteDataM),
-    .ReadEnable(MemToRegM)
+    .ReadEnable(MemToRegM),
+    .frame_valid(frame_valid),
+    .frame_addr(frame_addr)
   );
   
 
