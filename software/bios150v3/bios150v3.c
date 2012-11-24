@@ -45,10 +45,10 @@ typedef void (*entry_t)(void);
 
 int main(void)
 {
-    uwrite_int8s("\r\n");
+    uwrite_int8s("\r\n\r\n\r\n\r\n");
 
     for ( ; ; ) {
-        uwrite_int8s("CP4> ");
+        uwrite_int8s("> ");
 
         int8_t buffer[BUFFER_LEN];
         int8_t* input = read_token(buffer, BUFFER_LEN, " \x0d");
@@ -104,19 +104,7 @@ int main(void)
 
             volatile uint8_t* p = (volatile uint8_t*)(address);
             *p = byte;
-        } 
-	//TODO: your job to fill in your calls to these commands
-	else if(strcmp(input, "swline") == 0) {
-	  uwrite_int8s("Error: in bios150v3.c - replace this with your call to swline command\n\r");
-	} else if (strcmp(input, "hwline") == 0) {
-	  uwrite_int8s("Error: in bios150v3.c - replace this with your call to hwline command\n\r");
-	} else if (strcmp(input, "fill") == 0) {
-	  uwrite_int8s("Error: in bios150v3.c - replace this with your call to fill command\n\r");
-	} else if (strcmp(input, "swfill") == 0) {
-	  uwrite_int8s("Error: in bios150v3.c - replace this with your call to hwfille command\n\r");
-	} else {
-	  uwrite_int8s("Error: Unrecognized command\n\r");
-	}
+        }
     }
 
     return 0;
