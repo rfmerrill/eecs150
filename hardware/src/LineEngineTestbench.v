@@ -74,6 +74,7 @@ module LineEngineTestbench();
 		.LE_color(LE_color),
 		.LE_point(LE_point),
 		.LE_color_valid(LE_color_valid),
+		.LE_frame_base(6'b0),
 		.LE_x0_valid(LE_x0_valid),
 		.LE_y0_valid(LE_y0_valid),
 		.LE_x1_valid(LE_x1_valid),
