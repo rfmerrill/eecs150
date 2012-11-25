@@ -45,7 +45,7 @@ module GraphicsProcessorTestbench();
     
     GraphicsProcessor DUT(	.clk(Clock),
     						.rst(Reset),
-    						.bsel(bsel),
+//    						.bsel(bsel),
     						.rdf_valid(rdf_valid),
     						.af_full(af_full),
     						.rdf_dout(rdf_dout),
@@ -75,7 +75,70 @@ module GraphicsProcessorTestbench();
     						
 						);
     initial begin
-    	//TODO put your code here
+      gp_frame = 32'h1FC00000;
+      gp_code = 32'd12000008;
+      gp_valid = 1'b0;
+      FF_ready = 1'b1;
+      LE_ready = 1'b1;
+      af_full = 1'b1;
+      rdf_valid = 1'b0;
+      
+      Reset = 1'b1;
+      
+      #(Cycle*10);
+      
+      Reset = 1'b0;
+      #(Cycle)
+      
+      gp_valid = 1'b1;
+    	
+    	#(Cycle);
+    	gp_valid = 1'b0;
+    	
+      #(Cycle);
+    	
+    	while (1) begin
+       	while (~af_wr_en) #(Cycle);
+
+      	af_full = 1'b0;
+      	#(Cycle);
+      	af_full = 1'b1;
+      	
+      	#(Cycle * 20);
+
+        rdf_valid = 1;    	
+
+      	rdf_dout = { 32'h01DDDDDD, 32'h01EEEEEE, 32'h01FFFFFF, 32'h01222222 };
+
+      	#(Cycle);
+      	rdf_dout = { 32'h01333333, 32'h01AAAAAA, 32'h01BBBBBB, 32'h01CCCCCC };
+
+      	#(Cycle);
+      	rdf_valid = 0;
+      	
+      	while (~af_wr_en) #(Cycle);
+
+      	af_full = 1'b0;
+      	#(Cycle);
+      	af_full = 1'b1;
+      	
+      	#(Cycle * 10);
+//      	gp_valid = 1'b1;
+      	#(Cycle);
+      	gp_valid = 1'b0;
+      	#(Cycle * 10);
+      	
+        rdf_valid = 1;    	
+
+      	rdf_dout = { 32'h00190022, 32'h001A004B, 32'h0, 32'h0 };
+
+      	#(Cycle);
+      	rdf_dout = { 32'h02FFFFFF, 32'h00100020, 32'h001A004B, 32'h02EEEEEE };
+
+      	#(Cycle);
+      	rdf_valid = 0;
+    	end
+    	
     	$finish();
     end
 
