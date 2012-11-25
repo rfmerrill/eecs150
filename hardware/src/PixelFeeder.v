@@ -131,6 +131,9 @@ module PixelFeeder( //System:
         
         state <= next_state;
         
+        if (frame_valid)
+          next_addr_base <= frame_addr[27:22];
+        
         if (request_sent) begin
           requests_left <= requests_left - 10'd1;
         
