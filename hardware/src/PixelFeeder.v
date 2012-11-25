@@ -170,7 +170,7 @@ module PixelFeeder( //System:
     
     wire [9:0] real_x;
     
-    assign real_x = 10'd792 - x;
+    assign real_x = x;
     
     assign af_addr_din = {6'b0, addr_base, y, real_x[9:3], 2'b0};
 
@@ -194,6 +194,35 @@ module PixelFeeder( //System:
     
     wire fifo_transfer;
     assign fifo_transfer = ~feeder_full & ~pre_feeder_empty;
+    
+    reg [127:0] first_one;
+    reg alternate, first_one_valid;
+    
+    wire [127:0] pre_feeder_din;
+    wire pre_feeder_wr_en;
+    
+    assign pre_feeder_din = alternate ? rdf_dout : first_one;
+    assign pre_feeder_wr_en = alternate ? rdf_valid : first_one_valid;
+    
+    always @(posedge cpu_clk_g) begin
+      if (rst) begin
+        first_one <= 128'b0;
+        alternate <= 1'b0;
+        first_one_valid <= 1'b0;
+      end
+      else begin       
+        if (rdf_valid) begin
+          if (~alternate) begin
+            first_one <= rdf_dout;
+            first_one_valid <= 1'b1;
+          end
+          alternate <= ~alternate;
+        end else begin
+          if (~alternate)
+           first_one_valid <= 1'b0;
+        end
+      end    
+    end
 
     fifo_generator_v9_1 pre_feeder (
       .clk(cpu_clk_g),
@@ -201,8 +230,8 @@ module PixelFeeder( //System:
       .dout(pre_feeder_out),
       .full(pre_feeder_full),
       .empty(pre_feeder_empty),
-      .wr_en(rdf_valid),
-      .din(rdf_dout),
+      .wr_en(pre_feeder_wr_en),
+      .din(pre_feeder_din),
       .rd_en(fifo_transfer)      
     );
 
@@ -228,7 +257,7 @@ module PixelFeeder( //System:
     	.rst(rst),
     	.wr_clk(cpu_clk_g),
     	.rd_clk(clk50_g),
-    	.din(pre_feeder_out),
+    	.din({pre_feeder_out[31:0], pre_feeder_out[63:32], pre_feeder_out[95:64], pre_feeder_out[127:96]} ),
     	.wr_en(fifo_transfer),
     	.rd_en(video_ready & ignore_count == 0),
     	.dout(feeder_dout),
