@@ -193,7 +193,20 @@ module PixelFeeder( //System:
     
     
     wire fifo_transfer;
-    assign fifo_transfer = ~feeder_full & ~pre_feeder_empty;
+    reg fifo_transfer_r;
+    assign fifo_transfer = ~feeder_full & ~pre_feeder_empty & ~fifo_transfer_r;
+    
+    // Sigh, soo on the cycle where we set read enable for the first fifo high,
+    // we have to wait until the /next/ cycle to set write enable high on the
+    // second fifo. And because we only know if it's full, not almost full,
+    // we have to sacrifice half of our transfer speed. But that's no
+    // biggie, since we're STILL feeding stuff into the second fifo way faster
+    // than video can pull it out.
+    
+    always @(posedge cpu_clk_g) begin
+      if (rst) fifo_transfer_r <= 1'b0;
+      else fifo_transfer_r <= fifo_transfer;       
+    end
     
     reg [127:0] first_one;
     reg alternate, first_one_valid;
@@ -258,7 +271,7 @@ module PixelFeeder( //System:
     	.wr_clk(cpu_clk_g),
     	.rd_clk(clk50_g),
     	.din({pre_feeder_out[31:0], pre_feeder_out[63:32], pre_feeder_out[95:64], pre_feeder_out[127:96]} ),
-    	.wr_en(fifo_transfer),
+    	.wr_en(fifo_transfer_r),
     	.rd_en(video_ready & ignore_count == 0),
     	.dout(feeder_dout),
     	.full(feeder_full),
