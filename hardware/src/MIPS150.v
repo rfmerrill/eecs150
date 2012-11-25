@@ -494,7 +494,10 @@ module MIPS150(
     .WriteData(WriteDataM),
     .ReadEnable(MemToRegM),
     .frame_valid(frame_valid),
-    .frame_addr(frame_addr)
+    .frame_addr(frame_addr),
+    .gp_code(gp_code),
+    .gp_frame(gp_frame),
+    .gp_valid(gp_valid)
   );
   
 
