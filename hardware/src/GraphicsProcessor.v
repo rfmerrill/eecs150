@@ -97,7 +97,7 @@ module GraphicsProcessor(
       end else begin
         rdcs <= rdns;
         if (rdf_valid) begin
-          if (rdcs = rdREAD1)
+          if (rdcs == rdREAD1)
             line <= { rdf_dout, line[127:0] };
           else begin
             line <= { line[255:128], rdf_dout };
@@ -109,13 +109,11 @@ module GraphicsProcessor(
     
     
     localparam gIDLE = 3'b000;
-    lcoalparam gDECODE = 3'b001;
+    localparam gDECODE = 3'b001;
     localparam gFILL = 3'b010;
     localparam gLINE1 = 3'b011;
     localparam gLINE2 = 3'b100;
-    
-    reg [2:0] gns, gcs; 
-    
+/*        
     always @(*) begin
       gns = gcs;
       if (gpc_valid) begin
@@ -130,5 +128,5 @@ module GraphicsProcessor(
       
       end
       
-
+*/
 endmodule
