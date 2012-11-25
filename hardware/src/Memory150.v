@@ -369,6 +369,28 @@ module Memory150(
         .frame_interrupt(frame_interrupt),
         .frame_addr(frame_addr),
         .frame_valid(frame_valid));
+        
+/*        
+    assign filler_af_wr_en = 1'b0;
+    assign filler_af_addr_din = 31'b0;
+    assign filler_wdf_din = 128'b0;
+    assign filler_wdf_wr_en = 1'b0;
+    assign filler_wdf_mask_din = 16'b0;
+    
+    assign line_af_wr_en = 1'b0;
+    assign line_af_addr_din = 31'b0;
+    assign line_wdf_din = 128'b0;
+    assign line_wdf_wr_en = 1'b0;
+    assign line_wdf_mask_din = 16'b0;
+    
+    assign cmd_rdf_rd_en = 1'b0;
+    assign cmd_af_wr_en = 1'b0;
+    assign cmd_wdf_din = 128'b0;    
+*/
+
+    wire [31:0] line_color;
+    wire [9:0] line_point;
+    wire [23:0] filler_color;
 
     FrameFiller framefill(
         .clk(cpu_clk_g),
@@ -441,6 +463,5 @@ module Memory150(
       .GP_CODE(cpu_gp_code),
       .GP_FRAME(cpu_gp_frame),
       .GP_valid(cpu_gp_valid));
-   
 				       
 endmodule
