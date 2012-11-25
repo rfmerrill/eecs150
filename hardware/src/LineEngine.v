@@ -85,7 +85,7 @@ module LineEngine(
            error <= 11'b0;
         end else if (state == IDLE) begin
              if(LE_color_valid) 
-                color <= LE_color;
+                color <= { 8'b0, LE_color[23:0] };
              if(LE_x0_valid)
                 x0 <= LE_point;
              if(LE_y0_valid)
@@ -132,7 +132,7 @@ module LineEngine(
              end
              
         //end
-        end else if ((state == DRAW2)) begin
+        end else if ((state == DRAW2) & (next_state == DRAW1)) begin
 /*                  if(steep) begin
                      x = y;
                      y = x;
@@ -160,50 +160,50 @@ module LineEngine(
     //Mask Generation
     always@( * ) begin
       if (steep) begin
-        if (state == DRAW1) begin
+        if (state == DRAW2) begin
                 if(y[2:0] == 3'b000)
-                    wdf_mask_din = 16'h0FFF;
+                    wdf_mask_din = 16'hFFF0;
                 else if(y[2:0] == 3'b001) 
-                        wdf_mask_din = 16'hF0FF;
+                        wdf_mask_din = 16'hFF0F;
                 else if(y[2:0] == 3'b010) 
-                    wdf_mask_din = 16'hFF0F;
+                    wdf_mask_din = 16'hF0FF;
                 else if(y[2:0] == 3'b011) 
-                       wdf_mask_din = 16'hFFF0;
+                       wdf_mask_din = 16'h0FFF;
                 else
                     wdf_mask_din = 16'hFFFF;
         end else begin
                 if(y[2:0] == 3'b100)
-                    wdf_mask_din = 16'h0FFF;
+                    wdf_mask_din = 16'hFFF0;
                 else if(y[2:0] == 3'b101) 
-                    wdf_mask_din = 16'hF0FF;
-                else if(y[2:0] == 3'b110) 
                     wdf_mask_din = 16'hFF0F;
+                else if(y[2:0] == 3'b110) 
+                    wdf_mask_din = 16'hF0FF;
                 else if(y[2:0] == 3'b111) 
-                        wdf_mask_din = 16'hFFF0;
+                        wdf_mask_din = 16'h0FFF;
                 else
                     wdf_mask_din = 16'hFFFF;
         end
       end else begin
-        if (state == DRAW1) begin
+        if (state == DRAW2) begin
                 if(x[2:0] == 3'b000)
-                    wdf_mask_din = 16'h0FFF;
+                    wdf_mask_din = 16'hFFF0;
                 else if(x[2:0] == 3'b001) 
-                        wdf_mask_din = 16'hF0FF;
+                        wdf_mask_din = 16'hFF0F;
                 else if(x[2:0] == 3'b010) 
-                    wdf_mask_din = 16'hFF0F;
+                    wdf_mask_din = 16'hF0FF;
                 else if(x[2:0] == 3'b011) 
-                       wdf_mask_din = 16'hFFF0;
+                       wdf_mask_din = 16'h0FFF;
                 else
                     wdf_mask_din = 16'hFFFF;
         end else begin
                 if(x[2:0] == 3'b100)
-                    wdf_mask_din = 16'h0FFF;
+                    wdf_mask_din = 16'hFFF0;
                 else if(x[2:0] == 3'b101) 
-                    wdf_mask_din = 16'hF0FF;
-                else if(x[2:0] == 3'b110) 
                     wdf_mask_din = 16'hFF0F;
+                else if(x[2:0] == 3'b110) 
+                    wdf_mask_din = 16'hF0FF;
                 else if(x[2:0] == 3'b111) 
-                        wdf_mask_din = 16'hFFF0;
+                        wdf_mask_din = 16'h0FFF;
                 else
                     wdf_mask_din = 16'hFFFF;
         end
