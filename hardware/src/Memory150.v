@@ -141,7 +141,7 @@ module Memory150(
     // Graphics Command Processor <=> RequestController wires:
     wire 		 cmd_rdf_rd_en;
     wire 		 cmd_af_wr_en;
-    wire		 cmd_addr_din;
+    wire [30:0]		 cmd_addr_din;
     wire		 cmd_rdf_valid;
     wire		 cmd_af_full;
 
@@ -430,8 +430,22 @@ module Memory150(
       .wdf_wr_en(line_wdf_wr_en),
       .LE_frame_base(line_frame)
     );
+/*
+    assign filler_valid = cpu_gp_valid & (cpu_gp_code[31:24] == 8'b0);
+    assign filler_color = cpu_gp_code[23:0];
+    assign filler_frame = 32'h1FC00000;
+    
+    assign line_color = cpu_gp_code;
+    assign line_point = cpu_gp_code[9:0];
+    assign line_color_valid = cpu_gp_valid & (cpu_gp_code[31:24] == 8'h10);
+    assign line_x0_valid = cpu_gp_valid & (cpu_gp_code[31:24] == 8'h11);
+    assign line_x1_valid = cpu_gp_valid & (cpu_gp_code[31:24] == 8'h12);
+    assign line_y0_valid = cpu_gp_valid & (cpu_gp_code[31:24] == 8'h13);
+    assign line_y1_valid = cpu_gp_valid & (cpu_gp_code[31:24] == 8'h14);
+    assign line_trigger = line_y1_valid;
+    assign line_frame = 32'h1FC00000;
 
-
+*/
    //For CP5:
    GraphicsProcessor graphicsprocessor(
       .clk(cpu_clk_g),
@@ -462,6 +476,6 @@ module Memory150(
       //CPU IO
       .GP_CODE(cpu_gp_code),
       .GP_FRAME(cpu_gp_frame),
-      .GP_valid(cpu_gp_valid));
+      .GP_valid(cpu_gp_valid)); 
 				       
 endmodule
