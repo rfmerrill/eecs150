@@ -47,7 +47,7 @@ module FrameFiller(//system:
          DRAW1: if(!af_full && !wdf_full) 
                     next_state = DRAW2;
          DRAW2: if(!af_full && !wdf_full) begin 
-                   if (!((x == 14'd792) && (y == 14'd599))) 
+                   if (!(y == 10'd600)) 
                      next_state = DRAW1;        
                    else
                      next_state = IDLE;
@@ -68,7 +68,7 @@ module FrameFiller(//system:
         end else if ((state == DRAW1) & (next_state == DRAW2)) begin
              if(x  == 10'd792) begin
                 x <= 10'd0;
-                y <= (y == 10'd599) ? 10'b0 : (y + 10'd1);                                        
+                y <= (y + 10'd1);                                        
              end else begin
                 x <= x + 10'd8;
                 y <= y;
