@@ -119,7 +119,7 @@ module GraphicsProcessor(
             af_wr_en = 1'b0;
             rdf_rd_en = 1'b1;
             if (rdf_valid) begin
-              next_command_reg = { command_reg[255:128], rdf_dout };
+              next_command_reg = { command_reg[255:128], rdf_dout_fixed };
               rd_next_state = READ2;
             end
           end
@@ -128,7 +128,7 @@ module GraphicsProcessor(
             af_wr_en = 1'b0;
             rdf_rd_en = 1'b1;
             if (rdf_valid) begin
-              next_command_reg = { rdf_dout, command_reg[127:0] };
+              next_command_reg = { rdf_dout_fixed, command_reg[127:0] };
               rd_next_state = IDLE;
             end
           end
@@ -235,41 +235,22 @@ module GraphicsProcessor(
                  endcase
         end
     end
+    
+    // ChipScope components:
+wire [35:0] chipscope_control;
+chipscope_icon icon(
+.CONTROL0(chipscope_control)
+) /* synthesis syn_noprune=1 */;
+chipscope_ila ila(
+.CONTROL(chipscope_control),
+.CLK(clk),
+.DATA({ instruction,
+        gpc[15:0],
+        state, next_state, rd_state, rd_next_state,
+        af_wr_en, af_full, rdf_rd_en, rdf_valid  }),
+.TRIG0(GP_valid)
+) /* synthesis syn_noprune=1 */;
 
- 
-/*
-    //State Transition
-    always@( * ) begin
-        next_state = state;
-        case(state) 
-         IDLE: if(GP_valid)        
-                 next_state = FETCH1;
-         FETCH1:  
-                 next_state = FETCH2;
-         FETCH2: 
-                 next_state = DECODE;
-         DECODE: if(FF_ready & `OPCODE_IDX == 8'h01)
-                   next_state = FF;        
-                 else if(LE_ready & `OPCODE_IDX == 8'h02)
-                        next_state = LE; 
-                 else 
-                   next_state = DECODE; 
-         FF: if(FF_ready)
-               next_state = DECODE;
-         LE: if(LE_ready)
-               next_state = DECODE;
-         endcase
-    end
-
-    always @(posedge clk) begin
-        if (rst) begin   
-
-        end else if(state == FETCH1) begin
-                   if(rdf_valid) 
-                      
-  */
-
-                     
 
                        
 endmodule
