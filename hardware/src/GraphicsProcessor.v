@@ -236,20 +236,6 @@ module GraphicsProcessor(
         end
     end
     
-    // ChipScope components:
-wire [35:0] chipscope_control;
-chipscope_icon icon(
-.CONTROL0(chipscope_control)
-) /* synthesis syn_noprune=1 */;
-chipscope_ila ila(
-.CONTROL(chipscope_control),
-.CLK(clk),
-.DATA({ instruction,
-        gpc[15:0],
-        state, next_state, rd_state, rd_next_state,
-        af_wr_en, af_full, rdf_rd_en, rdf_valid  }),
-.TRIG0(GP_valid)
-) /* synthesis syn_noprune=1 */;
 
 
                        
