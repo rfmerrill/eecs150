@@ -253,7 +253,7 @@ module RequestController(
     reg bypass_reserved;
     reg cmd_reserved;
     wire reserved;
-    assign reserved = filler_reserved || line_reserved || bypass_reserved || cmd_reserved;
+    assign reserved = filler_reserved || line_reserved || bypass_reserved;
 
     always @(posedge clk) begin
         if(rst) 
@@ -273,8 +273,8 @@ module RequestController(
             
         if(rst)
             cmd_reserved <= 1'b0;
-        else if(fifo_access == CMD_ACCESS && !wdf_full && !af_full)
-            cmd_reserved <= cmd_reserved + 1'b1;
+ /*     else if(fifo_access == CMD_ACCESS && !wdf_full && !af_full)
+            cmd_reserved <= cmd_reserved + 1'b1; */
     end
 
     always @(*) begin
@@ -389,6 +389,7 @@ module RequestController(
     assign pixel_af_full  = fifo_access == PIXEL_ACCESS  ? af_full || wdf_full : 1'b1;
     
     assign cmd_af_full  = fifo_access == CMD_ACCESS  ? af_full || wdf_full : 1'b1;
+    
 
 endmodule
 
