@@ -26,7 +26,7 @@ module FrameFiller(//system:
 
   reg [1:0] state, next_state;
   reg [9:0] x, y;
-  reg [23:0] Color;
+  reg [23:0] rColor;
 
     always @(posedge clk) begin
         if(rst) begin
@@ -59,12 +59,15 @@ module FrameFiller(//system:
     //Setting up and writing
     always @(posedge clk) begin
         if (rst) begin
-           Color <= 32'b0;
+           rColor <= 32'b0;
             x <= 10'b0;
            y <= 10'b0;
         end else if (state == IDLE) begin
-           if(valid) 
-              Color <= color;
+           if(valid) begin
+              rColor <= color;
+              x <= 10'd0;
+              y <= 10'd0;
+           end
         end else if ((state == DRAW1) & (next_state == DRAW2)) begin
              if(x  == 10'd792) begin
                 x <= 10'd0;
@@ -85,7 +88,7 @@ module FrameFiller(//system:
     end
 
     //Outputs
-    assign wdf_din   = {4{8'b0, Color}}; 
+    assign wdf_din   = {4{8'b0, rColor}}; 
     assign wdf_wr_en = (state == DRAW1) || (state == DRAW2);
     assign af_wr_en  = (state == DRAW1);
     assign ready     = (state == IDLE);
