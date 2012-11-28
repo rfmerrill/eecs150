@@ -44,7 +44,8 @@ module GraphicsProcessor(
     //processor interface
     input [31:0] GP_CODE,
     input [31:0] GP_FRAME,
-    input GP_valid);
+    input GP_valid,
+    output reg GP_interrupt);
      
    
     //Your code goes here. GL HF. <--- well screw you!
@@ -183,7 +184,7 @@ module GraphicsProcessor(
         LE_y1_valid = 1'b0;                
         LE_trigger = 1'b0;
         next_gpc = gpc;
-        
+        GP_interrupt = 1'b0;
 
         if (GP_valid) begin
                 next_state = DECODE;
@@ -207,8 +208,10 @@ module GraphicsProcessor(
                              FF_valid = 1'b1;        
                              next_gpc = gpc + 32'd4;
                            end
-                         end else
+                         end else begin
                              next_state = IDLE;
+                             GP_interrupt = 1'b1;
+                         end
                       end
                  LINE1: begin
                            next_state = LINE2;
@@ -235,8 +238,5 @@ module GraphicsProcessor(
                  endcase
         end
     end
-    
-
-
                        
 endmodule
