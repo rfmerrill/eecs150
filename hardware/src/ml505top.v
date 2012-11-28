@@ -177,6 +177,7 @@ module ml505top
    wire [31:0] gp_code;
    wire [31:0] gp_frame;
    wire        gp_valid;
+   wire        gp_interrupt;
    
    wire [31:0] frame_addr;
    wire frame_valid;
@@ -223,6 +224,7 @@ module ml505top
       .cpu_gp_code(gp_code),
       .cpu_gp_frame(gp_frame),
       .cpu_gp_valid(gp_valid),
+      .cpu_gp_interrupt(gp_interrupt),
       .frame_interrupt(frame_interrupt),
       .frame_addr(frame_addr),
       .frame_valid(frame_valid)
@@ -248,6 +250,7 @@ module ml505top
     .gp_code(gp_code),
     .gp_frame(gp_frame),
     .gp_valid(gp_valid),
+    .gp_interrupt(gp_interrupt),
     .frame_interrupt(frame_interrupt),
     .frame_addr(frame_addr),
     .frame_valid(frame_valid)

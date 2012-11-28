@@ -19,6 +19,7 @@ module MIPS150(
     input [31:0] instruction,
     input stall,
 
+    input gp_interrupt,
     output [31:0] gp_code,
     output [31:0] gp_frame,
     output gp_valid,
@@ -304,7 +305,8 @@ module MIPS150(
     .InterruptRequest(InterruptRequest),
     .UART0Request(UART0Request),
     .UART1Request(UART1Request),
-    .frame_interrupt(frame_interrupt)
+    .frame_interrupt(frame_interrupt),
+    .gp_interrupt(gp_interrupt)
   );
 
   

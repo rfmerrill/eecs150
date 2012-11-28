@@ -63,6 +63,7 @@ module Memory150(
 	       input [31:0] cpu_gp_code,
                input [31:0] cpu_gp_frame,
 	       input cpu_gp_valid,
+	       output cpu_gp_interrupt,
 	       output frame_interrupt,
 	       input  [31:0] frame_addr,
 	       input  frame_valid
@@ -476,6 +477,7 @@ module Memory150(
       //CPU IO
       .GP_CODE(cpu_gp_code),
       .GP_FRAME(cpu_gp_frame),
-      .GP_valid(cpu_gp_valid)); 
+      .GP_valid(cpu_gp_valid),
+      .GP_interrupt(cpu_gp_interrupt); 
 				       
 endmodule
