@@ -1,3 +1,6 @@
+// This module should really becalled IOControl or something like that
+// All MMIO happens in this module.
+
 module UARTInterface(
   input clk,
   input rst,
