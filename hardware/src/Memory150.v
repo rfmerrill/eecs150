@@ -478,6 +478,6 @@ module Memory150(
       .GP_CODE(cpu_gp_code),
       .GP_FRAME(cpu_gp_frame),
       .GP_valid(cpu_gp_valid),
-      .GP_interrupt(cpu_gp_interrupt); 
+      .GP_interrupt(cpu_gp_interrupt)); 
 				       
 endmodule
