@@ -58,7 +58,7 @@ wire        [5:0]               next_ip;
 
 
 assign DataOut          = dataout;
-assign InterruptRequest = ie & |(im & ip);
+assign InterruptRequest = (ie & |(im & ip)) & ~DataInEnable;
 
 assign firetimer        = (count == compare);
 assign firertc          = (count == 32'hFFFF_FFFF);
@@ -114,5 +114,7 @@ always@(posedge Clock) begin
         end
     end
 end
+
+
 
 endmodule
