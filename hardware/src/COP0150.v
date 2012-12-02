@@ -57,6 +57,8 @@ wire                            ie;
 wire        [5:0]               next_ip;
 
 
+reg         [5:0]               new_ip;
+
 assign DataOut          = dataout;
 assign InterruptRequest = (ie & |(im & ip)) & ~DataInEnable;
 
@@ -68,7 +70,7 @@ assign ip               = cause[15:10];
 assign im               = status[15:10];
 assign ie               = status[0];
 
-assign next_ip          = ip | interrupts;
+assign next_ip          = ie ? (ip | interrupts | new_ip) : ip;
 
 always@(*) begin
     case(DataAddress)
@@ -89,32 +91,49 @@ always@(posedge Clock) begin
             compare <= 32'hFFFF;
             status  <= 32'b0;
             cause   <= 32'b0;
+            new_ip  <= 6'b0;
         end else begin
             if(DataInEnable) begin
                 epc     <= epc;
                 count   <= DataAddress == 5'h9 ? DataIn : count + 1;
                 compare <= DataAddress == 5'hB ? DataIn : compare;
                 status  <= DataAddress == 5'hC ? DataIn : status;
-                cause   <= DataAddress == 5'hD ? {DataIn[31:16], (interrupts | DataIn[15:10]), DataIn[9:0]}
+                cause   <= DataAddress == 5'hD ? {DataIn[31:16], DataIn[15:10], DataIn[9:0]}
                          : DataAddress == 5'hB ? {cause[31:16], 1'b0, next_ip[4:0], cause[9:0]}
                          :                       {cause[31:16], next_ip, cause[9:0]};
+
+                new_ip  <= ie ? 6'b0 : (new_ip | interrupts);
             end else if(InterruptHandled) begin
                 epc     <= InterruptedPC;
                 count   <= count + 1;
                 compare <= compare;
                 status  <= {status[31:1], 1'b0};
                 cause   <= {cause[31:16], next_ip, cause[9:0]};
+                new_ip  <= 6'b0;
             end else begin
                 epc     <= epc;
                 count   <= count + 1;
                 compare <= compare;
                 status  <= status;
                 cause   <= {cause[31:16], next_ip, cause[9:0]};
+                new_ip  <= ie ? 6'b0 : (new_ip | interrupts);
             end
         end
     end
 end
 
+  wire [35 : 0] CSCTRL;
 
+  chipscope_ila CILA (
+    .CONTROL(CSCTRL),
+    .CLK(Clock),
+    .DATA({InterruptedPC, new_ip, next_ip, ip, im, interrupts, ie, InterruptHandled}),
+    .TRIG0(InterruptRequest)
+  )/* synthesis syn_noprune=1 */;
+    
+  chipscope_icon CICON (
+    .CONTROL0(CSCTRL)
+  )/* synthesis syn_noprune=1 */;
+  
 
 endmodule
