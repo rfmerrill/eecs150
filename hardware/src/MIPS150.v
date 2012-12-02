@@ -174,9 +174,14 @@ module MIPS150(
     .Invalid(InvalidD)
   );
 
+  // Will this fix it?
+  
+  reg was_stalled;
+  always @(posedge clk) was_stalled <= (rst ? 1'b0 : stall);
+
 
   // Don't interrupt branches and loads or things get nuts
-  assign InterruptHandled = InterruptRequest & ~(BranchD | MemToRegD);
+  assign InterruptHandled = InterruptRequest & ~(BranchD | stall | was_stalled);
 
 
   assign SignExtImmedD = (ZeroExtD | ~InstructionD[15]) ? { 16'b0, InstructionD[15:0] } : { 16'hFFFF, InstructionD[15:0] };
@@ -296,12 +301,12 @@ module MIPS150(
     .Clock(clk),
     .Enable(1'b1),
     .Reset(rst),
-    .DataAddress(rd_addr_E),
+    .DataAddress(MXC0E ? rd_addr_E : 5'd0),
     .DataOut(CP0OutE),
     .DataInEnable(MXC0E & InstructionE[23]),
     .DataIn(RegBE),
     .InterruptedPC(NextPC),
-    .InterruptHandled(InterruptHandled & ~stall),
+    .InterruptHandled(InterruptHandled),
     .InterruptRequest(InterruptRequest),
     .UART0Request(UART0Request),
     .UART1Request(UART1Request),
@@ -430,7 +435,7 @@ module MIPS150(
   assign dcache_we = (~AddressE[31] & ~AddressE[30] & AddressE[28]) ? WriteMaskE : 4'b0000;
   assign icache_we = (~AddressE[31] & ~AddressE[30] & AddressE[29] & ~icache_re) ? WriteMaskE : 4'b0000;
 
-  assign ISRWe = (AddressE[31:28] == 4'b1100);
+  assign ISRWe = (AddressE[31:28] == 4'b1100) & MemWriteE;
   assign ISRIn = WriteDataE;
 
   assign dcache_din = ShiftedDataE;
@@ -529,7 +534,6 @@ module MIPS150(
     else
       ResultM = ALUOutM;
   end
-
 
 
 
