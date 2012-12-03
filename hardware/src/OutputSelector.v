@@ -34,10 +34,10 @@ module OutputSelector(input Branch,
         end 
         `B_BEQ: BranchTaken = (RegA == RegB);
         `B_BNE: BranchTaken = (RegA != RegB);
-        `B_BLEZ: BranchTaken = (RegA <= 32'b0);
-        `B_BGTZ: BranchTaken = (RegA >  32'b0);
-        `B_BLTZ: BranchTaken = (RegA <  32'b0);
-        `B_BGEZ: BranchTaken = (RegA >= 32'b0);
+        `B_BLEZ: BranchTaken = (RegA[31] | (RegA == 32'b0));
+        `B_BGTZ: BranchTaken = ~(RegA[31] | (RegA == 32'b0));
+        `B_BLTZ: BranchTaken = RegA[31];
+        `B_BGEZ: BranchTaken = ~RegA[31];
       endcase  
       
       if (BranchTaken)
