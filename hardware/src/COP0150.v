@@ -122,18 +122,5 @@ always@(posedge Clock) begin
     end
 end
 
-  wire [35 : 0] CSCTRL;
-
-  chipscope_ila CILA (
-    .CONTROL(CSCTRL),
-    .CLK(Clock),
-    .DATA({InterruptedPC, new_ip, next_ip, ip, im, interrupts, ie, InterruptHandled}),
-    .TRIG0(InterruptRequest)
-  )/* synthesis syn_noprune=1 */;
-    
-  chipscope_icon CICON (
-    .CONTROL0(CSCTRL)
-  )/* synthesis syn_noprune=1 */;
-  
 
 endmodule
