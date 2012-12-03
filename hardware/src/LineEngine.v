@@ -311,20 +311,6 @@ module LineEngine(
                                  {6'b0, LE_frame_base[27:22], y, x[9:3], 2'b0};
 
 
-  wire [35 : 0] CSCTRL;
-
-  chipscope_ila CILA (
-    .CONTROL(CSCTRL),
-    .CLK(clk),
-    .DATA({x, y, x0, y0, x1, y1, LE_rect, rect, state }),
-    .TRIG0(LE_trigger)
-  )/* synthesis syn_noprune=1 */;
-    
-  chipscope_icon CICON (
-    .CONTROL0(CSCTRL)
-  )/* synthesis syn_noprune=1 */;
-                                   
-
 endmodule
 
 
