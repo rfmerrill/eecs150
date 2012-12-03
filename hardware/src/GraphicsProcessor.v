@@ -23,6 +23,7 @@ module GraphicsProcessor(
     output reg LE_y0_valid,
     output reg LE_x1_valid,
     output reg LE_y1_valid,
+    output reg LE_rect,
 
     output reg LE_trigger,
     output [31:0] LE_frame,
@@ -183,6 +184,7 @@ module GraphicsProcessor(
         LE_y0_valid = 1'b0;
         LE_y1_valid = 1'b0;                
         LE_trigger = 1'b0;
+        LE_rect    = 1'b0;
         next_gpc = gpc;
         GP_interrupt = 1'b0;
 
@@ -196,8 +198,16 @@ module GraphicsProcessor(
                          next_gpc = GP_CODE;
                        end
                  DECODE: begin
-                         if(opcode == `LINE) begin
+                         if(opcode == `RECT) begin
                            if (LE_ready) begin
+                             LE_rect = 1'b1;
+                             next_state = LINE1;
+                             LE_color_valid = 1'b1;
+                             next_gpc = gpc + 32'd4;
+                           end
+                         end else if(opcode == `LINE) begin
+                           if (LE_ready) begin
+                             LE_rect = 1'b0;
                              next_state = LINE1;
                              LE_color_valid = 1'b1;
                              next_gpc = gpc + 32'd4;

@@ -408,6 +408,7 @@ module Memory150(
         .ready(filler_ready),
         .FF_frame_base(filler_frame));
 
+    wire line_rect;
 
     // For CP5:
     LineEngine le(
@@ -429,7 +430,8 @@ module Memory150(
       .wdf_din(line_wdf_din),
       .wdf_mask_din(line_wdf_mask_din),
       .wdf_wr_en(line_wdf_wr_en),
-      .LE_frame_base(line_frame)
+      .LE_frame_base(line_frame),
+      .LE_rect(line_rect)
     );
 /*
     assign filler_valid = cpu_gp_valid & (cpu_gp_code[31:24] == 8'b0);
@@ -461,7 +463,8 @@ module Memory150(
       .LE_x1_valid(line_x1_valid),
       .LE_y1_valid(line_y1_valid),
       .LE_trigger(line_trigger),
-      .LE_frame(line_frame), 
+      .LE_frame(line_frame),
+      .LE_rect(line_rect),
       //frame filler IO
       .FF_ready(filler_ready),
       .FF_valid(filler_valid),
