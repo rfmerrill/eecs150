@@ -4,6 +4,7 @@
 `define STOP 8'h00
 `define FILL 8'h01
 `define LINE 8'h02
+`define RECT 8'h03
 
 `define COLOR_IDX 23:0
 `define OPCODE_IDX 31:24
