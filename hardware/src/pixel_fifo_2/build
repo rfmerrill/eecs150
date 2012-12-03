@@ -1,0 +1,7 @@
+#!/bin/bash
+
+coregen -b /dev/stdin <<EOM
+NEWPROJECT .
+SETPROJECT .
+EOM
+coregen -p . -b fifo_generator_v9_1.xco
