@@ -1,6 +1,9 @@
 #ifndef UART_H_
 #define UART_H_
 
+#define UART_ASYNC_READ
+#define UART_ASYNC_WRITE
+
 #include "types.h"
 
 #define URECV_CTRL (*((volatile uint32_t*)0x80000004) & 0x01)
@@ -23,6 +26,17 @@ void uwrite_int8(int8_t c);
 void uwrite_int8s(const int8_t* s);
 
 int8_t uread_int8(void);
+
+#ifdef UART_ASYNC_READ
+
+#define UART_DATA_WAITING  (UARTR_IN_INDEX != UARTR_OUT_INDEX)
+
+#else
+
+#define UART_DATA_WAITING (URECV_CTRL)
+
+#endif
+
 
 void uart_init(void);
 

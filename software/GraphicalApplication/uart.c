@@ -1,5 +1,3 @@
-#define UART_ASYNC_WRITE
-
 #include "uart.h"
 
 #ifndef UART_ASYNC_WRITE
@@ -43,7 +41,7 @@ void uwrite_int8(int8_t c)
     UART_BUFFER[UART_IN_INDEX] = c;
     UART_IN_INDEX = (UART_IN_INDEX + 1) & 255;
     
-    asm ("ori     $k1, $0, 0x3801");
+    asm ("ori     $k1, $0, 0xBC01");
     asm ("mtc0    $k1, $12");
   }
 }
@@ -81,16 +79,18 @@ int8_t uread_int8(void) {
     idx = UARTR_OUT_INDEX;
     UARTR_OUT_INDEX = (UARTR_OUT_INDEX + 1) & 255;
 
-    ch = UART_BUFFER[idx];
+    ch = UARTR_BUFFER[idx];
 
-    asm ("ori     $k1, $0, 0x0801");
+    asm ("ori     $k1, $0, 0xBC01");
     asm ("mtc0    $k1, $12");
  
+#if 0
     if (ch == '\x0d') {
         uwrite_int8s("\r\n");
     } else {
         uwrite_int8(ch);
     }
+#endif
     return ch;
 }
 
@@ -100,11 +100,15 @@ int8_t uread_int8(void)
 {
     while (!URECV_CTRL) ;
     int8_t ch = URECV_DATA;
+
+#if 0
     if (ch == '\x0d') {
         uwrite_int8s("\r\n");
     } else {
         uwrite_int8(ch);
     }
+#endif
+
     return ch;
 }
 
