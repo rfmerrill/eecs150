@@ -1,1 +1,6 @@
-Nothing to see here
+Not all of the code in this repository is mine, as some of it was provided to us in the Skeleton,
+and some of it was written by my partner. For examples of code that're almost entirely mine check out
+hardware/src/GraphicsProcessor.v software/src/GraphicalApplication/Application.c and
+software/src/GraphicalApplication/ISR/isr.s
+
+I'll try to put up an explanation of what's going on here soon.
