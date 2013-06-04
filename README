@@ -4,3 +4,6 @@ hardware/src/GraphicsProcessor.v software/src/GraphicalApplication/Application.c
 software/src/GraphicalApplication/ISR/isr.s
 
 I'll try to put up an explanation of what's going on here soon.
+
+Apologies for the relative lack of comments. We weren't graded on them and we were pressed for time
+so I put off adding them and never got around to it.
