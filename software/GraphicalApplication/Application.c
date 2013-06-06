@@ -1,28 +1,55 @@
+// This is the code that we used to demonstrate the final version of the project.
 
-//not sure if what I do here is what they exactly want
+// Its main functionality is to draw a Tetris playing field. We didn't get around to implementing the actual game logic
+// So for now you just move your cursor around the field and can place or remove blocks.
+// It also displays time elapsed, CPU and GPU usage in the top left.
 
+// There are additional test modes: One draws an animated Sierpinski fractal using the line engine,
+// where you can set how many levels it goes down. The other draws a different type of fractal
+// using the filled rectangle draw.
+
+// If you compile this with certain optimization flags it doesn't work properly. We never figured out 
+// if this was due to a bug in our code or a bug in the compiler.
 
 #include "uart.h"
 #include "ascii.h"
 
+// We changed these from #defines because clang would give us nonsensical errors
+// otherwise. I like this better anyway.
+
+// Location of the three framebuffers that we flip between. Buffer flipping is now
+// handled entirely by the ISR.
 
 volatile uint32_t * framebuf1 = (volatile uint32_t*)0x1FC00000;
 volatile uint32_t * framebuf2 = (volatile uint32_t*)0x1F800000;
 volatile uint32_t * framebuf3 = (volatile uint32_t*)0x1F400000;
 
+// MMIO registers to tell the graphics coprocessor where to draw and what to draw.
+// Writing to gp_code starts the engine.
 volatile uint32_t * volatile * const gp_frame = (volatile uint32_t * volatile *)0x80000030;
 volatile uint32_t * volatile * const gp_code = (volatile uint32_t * volatile *)0x80000034;
 
+// MMIO register to tell the video interface which framebuffer to pull from.
+// This is double-registered, so you can safely write to it whenever, it takes effect
+// when the next frame starts. 
 volatile uint32_t * volatile * const framebuf_set = (volatile uint32_t * volatile *)0x80000020;
 
-
+// Macros for easy manual drawing. Currently we draw everything with the GP so they're not
+// used anymore.
 #define PIXEL(X, Y) framebuf1[((Y) << 10) | (X)]
 #define PIXEL2(X, Y) framebuf2[((Y) << 10) | (X)]
 #define PIXEL3(X, Y) framebuf3[((Y) << 10) | (X)]
 
+// Not MMIO registers, but rather flags that are used to communicate with the ISR.
+// GP_READY is set by the ISR when the GP finishes a draw cycle, you must clear it manually.
+// GP_WAIT is both set and cleared by the ISR, it indicates that we're still waiting
+// on the PixelFeeder to finish the previous frame. 
+                                                                                  
 #define GP_READY (*((volatile uint32_t*)0x1000f030))
 #define GP_WAIT  (*((volatile uint32_t*)0x1000f034))
 #define GP_SWAP  (*((volatile uint32_t*)0x1000f038))
+
+// These are mostly used for performance information.
 
 #define GP_CYCLES  (*((volatile uint32_t*)0x1000f040))
 
@@ -32,31 +59,42 @@ volatile uint32_t * volatile * const framebuf_set = (volatile uint32_t * volatil
 #define CYCLE_COUNTER (*((volatile uint32_t*)0x80000010))
 #define INSTRUCTION_COUNTER (*((volatile uint32_t*)0x80000014))
 
+// Real-time clock. Since we don't have multiply or divide instructions
+// it was more efficient to implement it this way.
 
 #define TIME_SECONDS_ONES (*(volatile unsigned char *)0x1000f104)
 #define TIME_SECONDS_TENS (*(volatile unsigned char *)0x1000f105)
 #define TIME_MINUTES_ONES (*(volatile unsigned char *)0x1000f106)
 #define TIME_MINUTES_TENS (*(volatile unsigned char *)0x1000f107)
 
+// Our two buffers for feeding instructions to the graphics unit. Like the framebuffers, we
+// swap between them.
+
 volatile uint32_t *gpcode[2] = { (volatile uint32_t *)0x10200000, (volatile uint32_t *)0x10400000 };
 
-int codeswap;
-int gpindex;
+int codeswap;   // Which buffer we're currently writing to
+int gpindex;    // Where to write the next instruction.
 
+// I decided to mimic OpenGL's drawing interface, so this is patterned after that.
+
+// Triggers the GP with our finished code buffer
 void gp_launch() {
   *gp_code = gpcode[codeswap];
   GP_READY = 0;
-
 }
 
+// Begin writing a new code buffer 
 void gp_begin() {
   codeswap = (1 - codeswap);
   gpindex = 0;
 }
 
+// Add the "end" instruction. Any invalid value works.
 void gp_end() {
   gpcode[codeswap][gpindex] = 0;
 }
+
+// These are all pretty self-explanatory...
 
 void frame_fill(uint32_t color) {
   gpcode[codeswap][gpindex] = 0x01000000 + color;
@@ -84,6 +122,8 @@ void draw_rect_outline (uint32_t color, int x0, int y0, int x1, int y1) {
   draw_line(color, x0, y1, x1, y1);
 }
 
+// Draw a tetris block. Kind of looks like the gameboy tetris blocks a bit
+// But with 2600-y looking colors.
 void draw_tile(uint32_t color1, uint32_t color2, int x, int y) { 
   int xp = x+32;
   int yp = y+32;
@@ -98,6 +138,9 @@ void draw_tile(uint32_t color1, uint32_t color2, int x, int y) {
   draw_rect(color1, x+4, y+4, xp-4, yp-4);
 */
 } 
+
+
+// Seven segment display type thing for drawing numbers.
 
 #define SEG_TOP  (1<<1)
 #define SEG_TR   (1<<2)
@@ -183,6 +226,9 @@ void draw_square_fractal (uint32_t color1, uint32_t color2, uint32_t x, uint32_t
 
 }
 
+// Array that shows which locations have a block and which don't.
+// We can't use a 2d array because then clang generates multiply instructions
+// which our processor doesn't have.
 
 uint8_t blocks_present[288];
 
@@ -257,10 +303,13 @@ int main() {
   while(1) {
     
     if (GP_READY && !GP_WAIT) {
+     // Launch the GP with the frame we just finished, and then draw the next one. 
+
      gpcycles = GP_CYCLES;
      COUNTER_RST = 1;
     
      gp_launch();
+
      if (!paused) {
 
       count++;
@@ -270,16 +319,6 @@ int main() {
       fpixel = (pixel << 8) + (pixel << 16) + pixel;
   
       gp_begin();
-      
-      
-      
-
-
-#if 0      
-      uwrite_int8s("#");
-      uwrite_int8s(uint32_to_ascii_hex(count, buffer, 32));
-      uwrite_int8s("\r\n");
-#endif
       
       y = 0;
 
@@ -309,6 +348,8 @@ int main() {
         }
       
       } else if (!trianglemode) {
+        // Draw the tetris playing field
+
         frame_fill(fpixel);
       
         //playing field
@@ -317,7 +358,8 @@ int main() {
         draw_rect((0xFF-pixel) << 8, 230, 0, 239, 585);
         draw_rect((0xFF-pixel) << 8, 561, 0, 570, 585);
         draw_rect((0xFF-pixel) << 8, 230, 577, 570, 585);
-        
+       
+        // The block colors pulsate with time.
         for (int i = 0, y = 0; i < 18; i++) {
           x = 240;
           for (int j = 0, x= 240; j < 10 ; j++) { 
@@ -329,16 +371,19 @@ int main() {
           }
           y += 32;
         }
-      
+     
+        // The cursor position is indicated by a black and white block that flashes
         if (count & 8)
           draw_tile(0xFFFFFF, 0x000000, 240 + (kx << 5), ((17-ky) << 5));
         else
-         draw_tile(0x000000, 0xFFFFFF, 240 + (kx << 5), ((17-ky) << 5));
+          draw_tile(0x000000, 0xFFFFFF, 240 + (kx << 5), ((17-ky) << 5));
     
     
         draw_tile(0xFF00 + (pixel << 16),0, 700, 44+ ( ((mcount & 256) ? (mcount & 255) : (255-(mcount & 255))) << 1 ));
 
       } else {
+        // Fractal drawing to show off our line and rectangle performance.
+
         frame_fill(0x0);
       
         if (trianglemode > 0)
@@ -348,12 +393,14 @@ int main() {
       }
       
       if (!fill_only && !line_mode) {
+        // Time elapsed
         draw_numeral(0xFF0000, TIME_MINUTES_TENS, 8, 8);
         draw_numeral(0xFF0000, TIME_MINUTES_ONES, 26, 8);
       
         draw_numeral(0xFF0000, TIME_SECONDS_TENS, 48, 8);
         draw_numeral(0xFF0000, TIME_SECONDS_ONES, 66, 8);
-      
+     
+        // CPU usage bar graphs (the outline is approximately 100%) 
         draw_rect(0xFF0000, 8, 64, 8+(cpucycles>>12), 88); 
         draw_rect_outline(0xFF, 8, 64, 9+(666666>>12), 88); 
         draw_rect(0xFF00, 8, 96, 8+(gpcycles>>12), 120 ); 
@@ -362,7 +409,6 @@ int main() {
 
       gp_end();
       
-
      }
      
      cpucycles = CYCLE_COUNTER;
@@ -382,7 +428,7 @@ int main() {
        uwrite_int8s("\r\n");     
      }
 
-    }
+    }  // End of frame draw code
     
     if (UART_DATA_WAITING) {
       int8_t ch;
@@ -390,6 +436,7 @@ int main() {
       ch = uread_int8();
       
       if (!paused) {
+        // wasd moves the cursor around.
         if (ch == 'w' && (ky != 17))
           ky++;
         if (ch == 's' && (ky != 0))
@@ -401,6 +448,7 @@ int main() {
       }
         
       if (ch == 'f') {
+        // f adds or removes a block at the current cursor position
         
         BLOCK_PRESENT(kx, ky) = !BLOCK_PRESENT(kx, ky);
       }
@@ -429,7 +477,7 @@ int main() {
         uwrite_int8(TIME_SECONDS_ONES + '0');
         uwrite_int8s("\r\n");
       }
-      
+     
       if (ch == 'q') {
         trianglemode++;
       }
