@@ -1,9 +1,17 @@
-Not all of the code in this repository is mine, as some of it was provided to us in the Skeleton,
-and some of it was written by my partner. For examples of code that're almost entirely mine check out
-hardware/src/GraphicsProcessor.v software/src/GraphicalApplication/Application.c and
+Not all of the code in this repository is mine, as some of it was provided to us in the Skeleton, and some of it was written by my partner. For examples of code that're almost entirely mine check out hardware/src/GraphicsProcessor.v software/src/GraphicalApplication/Application.c and
 software/src/GraphicalApplication/ISR/isr.s
 
-I'll try to put up an explanation of what's going on here soon.
+I would have liked to refactor this code but I no longer have access to the hardware so I have no way of verifying that the refactored code still works.
 
 Apologies for the relative lack of comments. We weren't graded on them and we were pressed for time
 so I put off adding them and never got around to it.
+
+This was my Senior Design project at UC Berkeley for CS 150, which I completed with my partner Nairy Manasians. As this is made up entirely of code written by university employees and/or using university resources, the whole thing is (C) The Regents of the University of California. If I am infringing UC's copyright in any way I will gladly comply with any requests.
+
+The Verilog modules are, for the most part, either entirely ours or entirely provided for us. I'll label at the top which ones we wrote.
+
+The C code is a mix, although the majority of Graphical Application was written by me.
+
+The project is (most of) a computer system implemented on a Xilinx Virtex-5 demo board. Almost everything is on the FPGA with the exception of a Chrontel DVI chip that did mostly physical layer stuff.
+
+Our portion of the code consists of a three stage pipelined CPU which uses most of the MIPS instruction set (some redundant instructions were not implemented, and we didn't have multiply/divide or floating point), an interrupt controller (coprocessor 0), a UART, the fetching and queuing portion of the video interface, and a graphics coprocessor that draws lines and filled rectangles.
