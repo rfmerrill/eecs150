@@ -1,5 +1,3 @@
-
-
 .section    .start
 .global     _start
 
@@ -7,6 +5,7 @@ _start:
 #    li      $sp, 0x10001000
 #    jal     main
 
+# Stash t0 and t1 to get two spare registers
 li $k0, 0x1000f050
 sw $t0, 0($k0)
 sw $t1, 4($k0)
@@ -209,6 +208,8 @@ j     uarttx_done
 
 FRAME_ISR:
 
+# Don't do much here, just clear GP_wait, see GP_ISR below for why
+
 li    $k0, 0x1000f034  #GP_wait <= 0
 sw    $0, 0($k0)
 
@@ -221,6 +222,8 @@ j frame_done
 
 GP_ISR:
 
+# Store the current cycle count in GP_CYCLES so the C code can
+# calculate the run time
 
 li    $k0, 0x80000010 #cycle counter
 lw    $k0, 0($k0)     #value of ccounter
@@ -231,6 +234,16 @@ li    $k0, 0x1000f030
 li    $k1, 0x1 
 sw    $k1, 0($k0)     #GP_ready <= 1
 sw    $k1, 4($k0)     #GP_wait <= 1
+
+# Since we just finished drawing, tell the PixelFeeder
+# to switch to the buffer we just drew on, and tell the
+# GPU to switch to the other one.
+
+# At this point, the GP has just finished drawing on one
+# buffer, but the PixelFeeder is still reading from the
+# other one, so we can't run the GP again until the PixelFeeder
+# finishes. We use GP_wait to indicate this.
+
 lw    $k1, 8($k0)     #$k1 <= GP_swap
 xori  $k1, $k1, 1
 sw    $k1, 8($k0)     #store it back
@@ -253,9 +266,9 @@ li    $k1, 0x80000020  # framebuf_set
 sw    $k0, 0($k1)
 j gp_done
 
-done:     # eret would be shorter
+done:
 
-
+# restore our saved registers
 li $k0, 0x1000f050
 lw $t0, 0($k0)
 lw $t1, 4($k0)
@@ -263,10 +276,12 @@ lw $t1, 4($k0)
 mfc0 $k0, $14
 mfc0 $k1, $12
 ori  $k1, $k1, 1    #enable the interrupts
+
+# The assembler that we were given doesn't recognize the "eret" opcode,
+# so after you make, you must manually change this part.
+# (we never got around to automating this)
 mtc0 $k1, $12
 jr   $k0
-
-
 
 
 
