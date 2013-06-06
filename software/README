@@ -1,0 +1,8 @@
+This directory contains all of the C and assembly code that runs on our processor. The compilation toolchain we were given to use was made up of a very old, customized version of LLVM as well as an equally old and customized version of gas.
+
+echo/, mmult/, asmtest/, example/, and line-engine/ were all provided for us for use as example and test code.
+bios150v3/ implements a command line interface that lets you run some tests and doubles as a bootloader
+Application/ is test code we were required to write to demonstrate our timer and UART interrupts
+GraphicalApplication/ is the demonstration code for the final project.
+
+
