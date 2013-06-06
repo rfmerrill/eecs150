@@ -1,3 +1,8 @@
+// This code was provided to us by the instructors. It combines a few diagnostic commands (memory read/write)
+// with a serial bootloader, which is helpful because changing ROM contents required a complete re-synthesis
+// of the FPGA bitstream (This is not always necessary but figuring out how to avoid it is not an easy task
+// given the toolset we were using)
+
 #include "ascii.h"
 #include "uart.h"
 #include "string.h"
