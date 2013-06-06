@@ -1,3 +1,3 @@
 TARGET := ISR
 
-include ../Makefile.llvm.in
+include ../../Makefile.llvm.in
