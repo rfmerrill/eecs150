@@ -1,5 +1,4 @@
-Not all of the code in this repository is mine, as some of it was provided to us in the Skeleton, and some of it was written by my partner. For examples of code that're almost entirely mine check out hardware/src/GraphicsProcessor.v software/src/GraphicalApplication/Application.c and
-software/src/GraphicalApplication/ISR/isr.s
+Not all of the code in this repository is mine, as some of it was provided to us in the Skeleton, and some of it was written by my partner. If you want a good overview of the project, start by looking at software/GraphicalApplication/, it uses most of the hardware's features.
 
 I would have liked to refactor this code but I no longer have access to the hardware so I have no way of verifying that the refactored code still works.
 
