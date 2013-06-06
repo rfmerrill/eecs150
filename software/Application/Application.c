@@ -1,3 +1,6 @@
+// This is demonstration code to show that our timer and UART interrupts work properly.
+// There was conflicting information given to us from the TAs and Professor,
+// so we weren't quite sure how we were supposed to do it.
 
 //not sure if what I do here is what they exactly want
 
